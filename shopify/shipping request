@@ -1,0 +1,9 @@
+utf8=✓
+_method=patch
+authenticity_token=Ic8mwHUz9f4B0WeqU1hV3qCiq8fWu4chlBOFLHbJUJhU+Np64RR2E51+Zd8plSsRKtvcux/feeX/8/lnYtFjdQ==
+previous_step=shipping_method
+step=payment_method
+checkout[shipping_rate][id]=shopify-standard%20shipping%20ground%20shipping%20(3-5%20days)-15.00
+button=&checkout[client_details][browser_width]=1366
+checkout[client_details][browser_height]=581
+checkout[client_details][javascript_enabled]=1
