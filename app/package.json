@@ -1,13 +1,12 @@
 {
-  "name": "electron-react-boilerplate",
-  "productName": "AIO",
+  "name": "Lightspeed",
+  "productName": "Lightspeed",
   "version": "1.0.0",
-  "description": "Electron application boilerplate based on React, React Router, Webpack, React Hot Loader for rapid application development",
+  "description": "Electron-based sneakerbot",
   "main": "./main.prod.js",
   "scripts": {
     "postinstall": "npm rebuild --runtime=electron --target=1.6.6 --disturl=https://atom.io/download/atom-shell --build-from-source"
   },
-  "license": "MIT",
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
     "request-promise": "^4.2.2",
