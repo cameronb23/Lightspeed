@@ -1,3 +1,4 @@
+/* eslint flowtype/no-weak-types: 1 */
 // @flow
 import React, { Component } from 'react';
 import type { Children } from 'react';
