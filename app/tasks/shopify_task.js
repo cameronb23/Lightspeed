@@ -4,16 +4,29 @@ import request from 'request-promise';
 import cheerio from 'cheerio';
 import { CookieJar } from 'tough-cookie';
 
+type CheckoutProfile = {
+  email: string,
+  firstName: string,
+  lastName: string,
+  address1: string,
+  address2: string,
+  zip: string,
+  city: string,
+  state: string,
+  phoneNumber: string
+}
+
 type ShopifyConfig = {
   base_url: string,
   keywords: Array<string>,
-  checkoutProfileId: string,
+  checkoutProfile: CheckoutProfile,
   userAgent: string
 };
 
 type SessionConfig = {
   checkout_url: string,
   current_url: string,
+  auth_token: string,
   storeId: string,
   cookieJar: CookieJar,
   checkoutId: string,
@@ -29,7 +42,7 @@ async function start() {
   const g = await addToCart({
     base_url: 'https://packershoes.com',
     keywords: ['gang', 'boost'],
-    checkoutProfileId: 'a',
+    checkout_profile: {name: 'a'},
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
   }, {
     handle: 'adidas-comsortium-x-united-arrows-x-slam-jam-campus',
@@ -87,6 +100,7 @@ function addToCart(config: ShopifyConfig, item: ItemVariant) {
 
     try {
       const response = await request(opts);
+      const $ = await cheerio.load(response.body);
       const checkout = response.request.uri.href;
 
       console.log(`Redirected to: ${checkout}`);
@@ -97,10 +111,13 @@ function addToCart(config: ShopifyConfig, item: ItemVariant) {
       const store = urlSplit[0];
       const id = urlSplit[1];
 
+      const token = $('[authenticity_token]').val();
+
       return resolve({
         checkout_url: checkout,
         current_url: checkout,
         storeId: store,
+        auth_token: token,
         cookieJar: cookies,
         checkoutId: id,
         currentStep: 'contact_information'
@@ -113,6 +130,68 @@ function addToCart(config: ShopifyConfig, item: ItemVariant) {
       // };
     } catch (e) {
       console.log(e);
+      return reject(e);
+    }
+  });
+}
+
+function sendContactInfo(config: ShopifyConfig, session: SessionConfig, recaptchResponse: string) {
+  return new Promise(async (resolve, reject) => {
+    // check for /products.json availability
+    const profile = config.checkoutProfile;
+    let opts = {
+      url: `${session.checkout_url}`,
+      method: 'POST',
+      headers: {
+        Origin: config.base_url,
+        'User-Agent': config.userAgent,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        Referer: `${session.checkout_url}?step=contact_information`,
+        'Accept-Language': 'en-US,en;q=0.8'
+      },
+      resolveWithFullResponse: true,
+      followAllRedirects: true,
+      jar: session.cookieJar,
+      formData: {
+        utf8: '✓',
+        _method: 'patch',
+        authenticity_token: session.auth_token,
+        previous_step: 'contact_information',
+        step: 'shipping_method',
+        'checkout[email]': profile.email,
+        'checkout[buyer_accepts_marketing]': 0,
+        'checkout[shipping_address][first_name]': profile.firstName,
+        'checkout[shipping_address][last_name]': profile.lastName,
+        'checkout[shipping_address][company]': '',
+        'checkout[shipping_address][address1]': profile.address1,
+        'checkout[shipping_address][address2]': profile.address2,
+        'checkout[shipping_address][city]': profile.city,
+        'checkout[shipping_address][country]': 'United States',
+        'checkout[shipping_address][province]': profile.state,
+        'checkout[shipping_address][zip]': profile.zip,
+        'checkout[shipping_address][phone]': profile.phoneNumber,
+        'g-recaptcha-response': recaptchResponse,
+        'button': '',
+        'checkout[client_details][browser_width]': 1366,
+        'checkout[client_details][browser_height]': 581,
+        'checkout[client_details][javascript_enabled]': 1
+      }
+    };
+
+    try {
+      const response = request(opts);
+
+      const $ = await cheerio.load(response.body);
+      const token = $('[authenticity_token]').val();
+
+      const newSession = Object.assign({}, session, {
+        auth_token: token,
+        current_url: response.request.uri.href
+      })
+
+      return resolve(newSession);
+    } catch (e) {
       return reject(e);
     }
   });
@@ -177,6 +256,23 @@ class ShopifyTask {
     } catch (e) {
       console.log('Failed to add to cart: ', e);
       return this.atc();
+    }
+  }
+
+  async sendContactInformation() {
+    if (this.session == null) {
+      console.log('Unable to send info! No session!');
+      return;
+    }
+    // TODO: fetch recaptchResponse
+    try {
+      const session = await sendContactInfo(this.config, this.session, 'aaa');
+
+      this.session = session;
+      // TODO: run shipping
+    } catch (e) {
+      console.log(e);
+      return this.sendContactInformation();
     }
   }
 }
