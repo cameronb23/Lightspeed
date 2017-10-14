@@ -168,6 +168,7 @@
     "webpack-merge": "^4.1.0"
   },
   "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
     "devtron": "^1.4.0",
     "electron-debug": "^1.2.0",
     "font-awesome": "^4.7.0",
@@ -181,7 +182,11 @@
     "react-router-redux": "^5.0.0-alpha.6",
     "redux": "^3.7.1",
     "redux-thunk": "^2.2.0",
-    "source-map-support": "^0.4.15"
+    "request-promise": "^4.2.2",
+    "semantic-ui-css": "^2.2.12",
+    "semantic-ui-react": "^0.74.2",
+    "source-map-support": "^0.4.15",
+    "tough-cookie": "^2.3.3"
   },
   "devEngines": {
     "node": ">=7.x",

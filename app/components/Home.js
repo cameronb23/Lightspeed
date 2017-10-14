@@ -6,7 +6,7 @@ export default class Home extends Component {
   render() {
     return (
       <div>
-        <Link to="/counter">to Counter</Link>
+        <Link to="/tasks">to Tasks</Link>
       </div>
     );
   }
