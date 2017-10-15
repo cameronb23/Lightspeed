@@ -11,13 +11,15 @@ export default class App extends Component {
     children: Children
   };
 
-  state: Object;
+  state: {
+    sidebarVisible: boolean
+  };
 
   constructor(props: Object) {
     super(props);
 
     this.state = {
-      sidebarVisible: false
+      sidebarVisible: true
     };
   }
 
@@ -28,7 +30,7 @@ export default class App extends Component {
     return (
       <Sidebar.Pushable as={Segment}>
         <div>
-          <Sidebar as={Menu} animation="overlay" attached="left" width="thin" visible={this.state.sidebarVisible} icon="labeled" vertical borderless>
+          <Sidebar as={Menu} animation="overlay" width="thin" visible={this.state.sidebarVisible} icon="labeled" vertical borderless>
             <Menu.Item name="home">
               <Icon name="home" />
               Home

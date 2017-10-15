@@ -7,11 +7,5 @@
   "scripts": {
     "postinstall": "npm rebuild --runtime=electron --target=1.6.6 --disturl=https://atom.io/download/atom-shell --build-from-source"
   },
-  "dependencies": {
-    "cheerio": "^1.0.0-rc.2",
-    "request-promise": "^4.2.2",
-    "semantic-ui-css": "^2.2.12",
-    "semantic-ui-react": "^0.74.2",
-    "tough-cookie": "^2.3.3"
-  }
+  "dependencies": {}
 }
