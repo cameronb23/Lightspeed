@@ -14,8 +14,15 @@ type CheckoutProfile = {
   zip: string,
   city: string,
   state: string,
-  phoneNumber: string
-}
+  phoneNumber: string,
+  payment: {
+    cardNumber: string,
+    cardName: string,
+    cvv: string,
+    expMonth: number,
+    expYear: number
+  }
+};
 
 type ShopifyConfig = {
   base_url: string,
@@ -33,7 +40,8 @@ type SessionConfig = {
   checkoutId: string,
   currentStep: string,
   sitekey: string,
-  shipping_methods: ?Array<Object>
+  shipping_methods: ?Array<Object>,
+  payment_vals: ?Object,
 };
 
 type ItemVariant = {
@@ -86,7 +94,7 @@ function determineJsonAvailability(config: ShopifyConfig) {
 function addToCart(config: ShopifyConfig, item: ItemVariant) {
   const cookies = request.jar();
   return new Promise(async (resolve, reject) => {
-    let opts = {
+    const opts = {
       url: `${config.base_url}/cart/${item.id}:1`,
       method: 'GET',
       // form: {
@@ -98,7 +106,7 @@ function addToCart(config: ShopifyConfig, item: ItemVariant) {
         'User-Agent': config.userAgent,
         'Content-Type': 'application/x-www-form-urlencoded',
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        Referer: `${config.base_url}/products/${item.handle}`,
+        // Referer: `${config.base_url}/products/${item.handle}`,
         'Accept-Language': 'en-US,en;q=0.8'
       },
       resolveWithFullResponse: true,
@@ -130,7 +138,7 @@ function addToCart(config: ShopifyConfig, item: ItemVariant) {
       }
       console.log(sitekey);
 
-      //sitekey = sitekey.split('anchor?k=')[1];
+      // sitekey = sitekey.split('anchor?k=')[1];
 
       console.log('Auth token:', token);
       console.log('Sitekey: ', sitekey);
@@ -200,9 +208,10 @@ function sendContactInfo(config: ShopifyConfig, session: SessionConfig, recaptch
         'User-Agent': config.userAgent,
         'Content-Type': 'application/x-www-form-urlencoded',
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        Referer: `${session.checkout_url}`,
+        // Referer: `${session.checkout_url}`,
         'Accept-Language': 'en-US,en;q=0.8'
       },
+      resolveWithFullResponse: true,
       followAllRedirects: true,
       jar: session.cookieJar,
       formData: form
@@ -211,10 +220,11 @@ function sendContactInfo(config: ShopifyConfig, session: SessionConfig, recaptch
     try {
       const response = await request(opts);
 
-      const $ = await cheerio.load(response);
+      const $ = await cheerio.load(response.body);
       const token = $('input[name="authenticity_token"]').val();
 
       const newSession = Object.assign({}, session, {
+        checkout_url: response.request.uri.href,
         auth_token: token
       });
 
@@ -227,26 +237,23 @@ function sendContactInfo(config: ShopifyConfig, session: SessionConfig, recaptch
 
 function retrieveShippingRates(session: SessionConfig, config: ShopifyConfig) {
   return new Promise(async (resolve, reject) => {
-    const url = `${session.checkout_url}?previous_step=contact_information&step=shipping_method`;
-
     const opts = {
-      url,
+      url: session.checkout_url,
       method: 'GET',
       headers: {
         Origin: config.base_url,
         'User-Agent': config.userAgent,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        Referer: `${session.checkout_url}`,
+        // Referer: `${session.checkout_url}`,
         'Accept-Language': 'en-US,en;q=0.8'
       },
       jar: session.cookieJar,
-      transform(body) {
-        return cheerio.load(body);
-      }
+      resolveWithFullResponse: true
     };
 
     try {
-      const $ = await request(opts);
+      const response = await request(opts);
+      const $ = await cheerio.load(response);
       const elements = $('[data-checkout-total-shipping-cents]');
 
       const items = elements.map((index, el) => {
@@ -260,6 +267,7 @@ function retrieveShippingRates(session: SessionConfig, config: ShopifyConfig) {
       const token = $('input[name="authenticity_token"]').val();
 
       const newSession = Object.assign({}, session, {
+        checkout_url: response.request.uri.href,
         auth_token: token,
         shipping_methods: items
       });
@@ -271,9 +279,60 @@ function retrieveShippingRates(session: SessionConfig, config: ShopifyConfig) {
   });
 }
 
-function sendShippingMethod(shippingMethod: Object, session: SessionConfig, config: ShopifyConfig) {
+function sendPayment(session: SessionConfig, config: ShopifyConfig) {
+  const payment = config.checkout_profile.payment;
+  let cardNum = payment.cardNumber.match(/.{1,4}/g);
+  cardNum = cardNum.join(' ');
+
+  const cardData = {
+    credit_card: {
+      number: cardNum,
+      verification_value: payment.cvv,
+      name: payment.cardName,
+      month: payment.expMonth,
+      year: payment.expYear
+    }
+  };
+
   return new Promise(async (resolve, reject) => {
-    let opts = {
+    const opts = {
+      url: 'https://elb.deposit.shopifycs.com/sessions',
+      method: 'POST',
+      headers: {
+        'User-Agent': config.userAgent
+      },
+      followAllRedirects: true,
+      jar: session.cookieJar,
+      body: cardData,
+      json: true
+    };
+
+    try {
+      const json = await request(opts);
+
+      const newSession = Object.assign({}, session, {
+        payment_vals: {
+          sessionToken: json.id
+        }
+      });
+
+      return resolve(newSession);
+    } catch (e) {
+      return reject(e);
+    }
+  });
+}
+
+function validatePayment(session: SessionConfig, config: ShopifyConfig) {
+  const profile = config.checkout_profile;
+
+  return new Promise(async (resolve, reject) => {
+    if (session.payment_vals == null ||
+        session.payment_vals.sessionToken == null ||
+        session.payment_vals.gateway == null) {
+      return reject('No payment values.');
+    }
+    const opts = {
       url: `${session.checkout_url}`,
       method: 'POST',
       headers: {
@@ -281,7 +340,7 @@ function sendShippingMethod(shippingMethod: Object, session: SessionConfig, conf
         'User-Agent': config.userAgent,
         'Content-Type': 'application/x-www-form-urlencoded',
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        Referer: `${session.checkout_url}?step=payment_method&previous_step=shipping_method`,
+        // Referer: `${session.checkout_url}?step=payment_method&previous_step=shipping_method`,
         'Accept-Language': 'en-US,en;q=0.8'
       },
       resolveWithFullResponse: true,
@@ -291,28 +350,42 @@ function sendShippingMethod(shippingMethod: Object, session: SessionConfig, conf
         utf8: '✓',
         _method: 'patch',
         authenticity_token: session.auth_token,
-        previous_step: 'shipping_method',
-        step: 'payment_method',
-        'checkout[shipping_rate][id]': shippingMethod.id,
+        previous_step: 'payment_method',
+        step: '',
+        'checkout[email]': profile.email,
+        'checkout[buyer_accepts_marketing]': 0,
+        'checkout[shipping_address][first_name]': profile.firstName,
+        'checkout[shipping_address][last_name]': profile.lastName,
+        'checkout[shipping_address][company]': '',
+        'checkout[shipping_address][address1]': profile.address1,
+        'checkout[shipping_address][address2]': profile.address2,
+        'checkout[shipping_address][city]': profile.city,
+        'checkout[shipping_address][country]': 'United States',
+        'checkout[shipping_address][province]': profile.state,
+        'checkout[shipping_address][zip]': profile.zip,
+        'checkout[shipping_address][phone]': profile.phoneNumber,
+        'checkout[credit_card][vault]': 'false',
+        'checkout[payment_gateway]': session.payment_vals.gateway,
         'button': '',
+        'complete': '1',
+        's': session.payment_vals.sessionToken,
         'checkout[client_details][browser_width]': 1366,
         'checkout[client_details][browser_height]': 581,
         'checkout[client_details][javascript_enabled]': 1
-
       }
     };
 
     try {
       const response = request(opts);
+      const url = response.request.uri.href;
 
-      const $ = await cheerio.load(response);
-      const token = $('input[name="authenticity_token"]').val();
+      if (url.includes('/processing')) {
+        return resolve('Payment success');
+      } else if (url.includes('?validate=true')) {
+        return reject('Payment declined');
+      }
 
-      const newSession = Object.assign({}, session, {
-        auth_token: token
-      });
-
-      return resolve(newSession);
+      return reject('Error submitting payment.');
     } catch (e) {
       return reject(e);
     }
@@ -414,10 +487,19 @@ class ShopifyTask {
 
       if (method != null) {
         this.session = await sendShippingMethod(method, this.session, this.config);
+
+        this.sendPaymentDetails();
       }
     } catch (e) {
       console.log(e);
       return this.chooseShippingMethod();
+    }
+  }
+
+  async sendPaymentDetails() {
+    if (this.session == null) {
+      console.log('Unable to find session.');
+      return;
     }
   }
 }
