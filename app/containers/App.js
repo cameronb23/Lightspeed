@@ -28,30 +28,33 @@ export default class App extends Component {
   render() {
     // <Button basic attached="right" floated="left" icon="bars" onClick={this.toggleVisibility} />
     return (
-      <Sidebar.Pushable as={Segment}>
-        <div>
-          <Sidebar as={Menu} animation="overlay" width="thin" visible={this.state.sidebarVisible} icon="labeled" vertical borderless>
-            <Menu.Item name="home">
-              <Icon name="home" />
-              Home
-            </Menu.Item>
-            <Menu.Item name="task-editor">
-              <Icon name="pencil" />
-              Task Builder
-            </Menu.Item>
-            <Menu.Item as={Link} name="tasks" to="/tasks">
-              <Icon name="list" />
-              Tasks
-            </Menu.Item>
-            <Menu.Item name="settings">
-              <Icon name="cogs" />
-              Settings
-            </Menu.Item>
-          </Sidebar>
-        </div>
+      <Sidebar.Pushable>
+        <Sidebar as={Menu} style={{overflowX: 'visible !important'}} animation="overlay" width="thin" visible={this.state.sidebarVisible} icon="labeled" vertical borderless>
+          <Menu.Item name="home">
+            <Icon name="home" />
+            Home
+          </Menu.Item>
+          <Menu.Item as={Link} name="task-editor" to="/taskbuilder">
+            <Icon name="pencil" />
+            Task Builder
+          </Menu.Item>
+          <Menu.Item as={Link} name="tasks" to="/tasks">
+            <Icon name="list" />
+            Tasks
+          </Menu.Item>
+          <Menu.Item as={Link} name="profiles" to="/profiles">
+            <Icon name="payment" />
+            Profiles
+          </Menu.Item>
+          <Menu.Item name="settings">
+            <Icon name="cogs" />
+            Settings
+          </Menu.Item>
+          <Button basic style={{ position: 'absolute', transform: 'translateX(100%)', top: 20, right: 0 }} attached="right" icon="bars" onClick={this.toggleVisibility} />
+        </Sidebar>
         <Sidebar.Pusher>
           <Segment basic>
-            <Button basic style={{ position: 'absolute' }} icon="bars" onClick={this.toggleVisibility} />
+            <Button basic attached="left" icon="bars" onClick={this.toggleVisibility} />
             <Divider horizontal>Lightspeed</Divider>
             {this.props.children}
           </Segment>

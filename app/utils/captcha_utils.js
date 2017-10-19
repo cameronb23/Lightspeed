@@ -1,6 +1,4 @@
-//const request = require('request-promise');
 import request from 'request-promise';
-//const Config = require('./config.json');
 
 const Config = {
   task: {

@@ -2,4 +2,4 @@
 // @flow
 
 export { default as Shopify } from './shopify';
-export { default as Supreme } from './supreme';
+export { default as Task } from './task';
