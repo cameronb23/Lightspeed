@@ -471,13 +471,14 @@ class ShopifyTask extends Task {
     console.log('initialized');
   }
 
-  start() {
+  async start() {
     this.log('Started task.');
+    this.statusUpdate('0-Starting');
     this.taskStartTime = moment().milliseconds();
     this.atc();
   }
 
-  stop() {
+  async stop() {
     this.stopped = true;
   }
 

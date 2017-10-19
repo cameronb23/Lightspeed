@@ -4,7 +4,7 @@ import React, { Component } from 'react';
 import type { Children } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Sidebar, Menu, Segment, Icon, Button, Divider, Grid } from 'semantic-ui-react';
+import { Sidebar, Menu, Segment, Icon, Button, Divider } from 'semantic-ui-react';
 
 export default class App extends Component {
   props: {

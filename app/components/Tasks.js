@@ -1,7 +1,7 @@
 // @flow
 import React, { Component } from 'react';
 import { Table, Loader, Icon, Button } from 'semantic-ui-react';
-import { sendStartCommand } from '../actions/tasks';
+import { sendStartCommand, sendStopCommand } from '../actions/tasks';
 
 class Tasks extends Component {
   props: {
@@ -35,6 +35,20 @@ class Tasks extends Component {
     });
   }
 
+  async handleStopAllTasks() {
+    this.setState({
+      loading: true
+    });
+
+    this.props.tasks.forEach(t => {
+      this.props.dispatch(sendStopCommand(t));
+    });
+
+    this.setState({
+      loading: false
+    });
+  }
+
   render() {
     const { tasks } = this.props;
     return (
@@ -60,7 +74,7 @@ class Tasks extends Component {
                   <Icon name="close" /> Clear All
                 </Button>
                 <Button size="small" positive onClick={this.handleStartAllTasks.bind(this)}>Start All</Button>
-                <Button negative size="small">Stop All</Button>
+                <Button size="small" negative onClick={this.handleStopAllTasks.bind(this)}>Stop All</Button>
               </Table.HeaderCell>
             </Table.Row>
           )}

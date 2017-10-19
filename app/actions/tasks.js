@@ -1,7 +1,7 @@
 // @flow
 import type { CheckoutProfile } from '../globals';
 import type { TaskType } from '../reducers/tasks';
-import { startTask } from '../tasks/task-manager';
+import { startTask, stopTask } from '../tasks/task-manager';
 
 export const ADD_TASK = 'TASK_ADD';
 export const UPDATE_TASK = 'UPDATE_TASK_STATUS';
@@ -31,7 +31,7 @@ export function addTask(settings: TaskSettings) {
       data: settings.data,
       proxies: settings.proxies,
       checkout_profile: settings.checkout_profile,
-      status: '0-Initializing'
+      status: '0-Idle'
     }
   };
 }
@@ -44,9 +44,20 @@ export function removeTask(taskId: number) {
 }
 
 export function sendStartCommand(task: TaskType) {
+  // $FlowFixMe
   return dispatch => dispatch({
     type: START_TASK,
     payload: startTask(task, (status) => { dispatch(updateTaskStatus(task.id, status)); })
+  }).catch(err => {
+    console.log(err);
+  });
+}
+
+export function sendStopCommand(task: TaskType) {
+  // $FlowFixMe
+  return dispatch => dispatch({
+    type: STOP_TASK,
+    payload: stopTask(task)
   }).catch(err => {
     console.log(err);
   });
