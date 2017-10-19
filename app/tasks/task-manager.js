@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import _ from 'underscore';
-import ShopifyTask from './shopify';
+import Shopify from './shopify';
 import type { TaskSettings } from '../actions/tasks';
 
 const tasks = [];
@@ -8,7 +8,7 @@ const tasks = [];
 export async function startTask(taskData: TaskSettings, updateStatusCallback: Function): boolean {
   switch (taskData.type) {
     case 'SHOPIFY': {
-      const task = new ShopifyTask(
+      const task = new Shopify(
         taskData.id,
         {
           base_url: taskData.url,
@@ -47,7 +47,7 @@ export async function stopTask(taskId: number): boolean {
 
   try {
     await task.stop();
-     
+
     return true;
   } catch (e) {
     console.log(e);

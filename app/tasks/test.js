@@ -1,4 +1,4 @@
-import ShopifyTask from './shopify';
+import Shopify from './index';
 
 const cp = {
   email: 'john@google.com',
@@ -20,7 +20,7 @@ const cp = {
 }
 
 
-const s = new ShopifyTask(1, {
+const s = new Shopify(1, {
   base_url: 'https://offthehook.ca',
   keywords: ['sd', 'sa'],
   checkout_profile: cp,

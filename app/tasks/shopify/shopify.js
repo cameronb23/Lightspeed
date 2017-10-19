@@ -4,9 +4,9 @@ import request from 'request-promise';
 import cheerio from 'cheerio';
 import chalk from 'chalk';
 import moment from 'moment';
-import { solve } from '../utils/captcha_utils';
-import Task from './task';
-import type { CheckoutProfile } from '../globals';
+import { solve } from '../../utils/captcha_utils';
+import Task from '../task';
+import type { CheckoutProfile } from '../../globals';
 
 type ShopifyConfig = {
   base_url: string,
