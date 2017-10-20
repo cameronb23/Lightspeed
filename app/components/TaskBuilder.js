@@ -1,4 +1,5 @@
 // @flow
+import _ from 'underscore';
 import React, { Component } from 'react';
 import { Button } from 'semantic-ui-react';
 import { Form, Input, TextArea, Checkbox, Dropdown } from 'formsy-semantic-ui-react';
@@ -62,7 +63,7 @@ class TaskBuilder extends Component {
           userAgent: 'blah'
         },
         proxies: formData.proxies,
-        checkout_profile: null
+        checkout_profile: _.findWhere(this.props.profiles, { id: formData.profile })
       }));
 
       this.setState({

@@ -21,7 +21,7 @@ export function addProfile(profile: CheckoutProfile) {
   };
 }
 
-export function removeTask(profileId: string) {
+export function removeProfile(profileId: string) {
   return {
     type: REMOVE_PROFILE,
     id: profileId

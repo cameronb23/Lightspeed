@@ -4,8 +4,11 @@ import request from 'request-promise';
 import cheerio from 'cheerio';
 import chalk from 'chalk';
 import moment from 'moment';
+import _ from 'underscore';
+import { parse, format } from 'libphonenumber-js';
 import { solve } from '../../utils/captcha_utils';
 import Task from '../task';
+import { States } from '../../utils/states';
 import type { CheckoutProfile } from '../../globals';
 
 type ShopifyConfig = {
@@ -141,6 +144,17 @@ function sendContactInfo(
     // check for /products.json availability
     const profile = config.checkout_profile;
 
+    const phone = format(parse(profile.phoneNumber), 'National');
+    // const phone = format(parse(profile.phoneNumber), 'International');
+
+    let state = profile.state; 
+
+    const possibleState = _.findWhere(States, { abbreviation: profile.state });
+
+    if (possibleState != null) {
+      state = possibleState;
+    }
+
     const form = {
       utf8: '✓',
       _method: 'patch',
@@ -157,9 +171,9 @@ function sendContactInfo(
       'checkout[shipping_address][address2]': profile.address2,
       'checkout[shipping_address][city]': profile.city,
       'checkout[shipping_address][country]': profile.country,
-      'checkout[shipping_address][province]': profile.state,
+      'checkout[shipping_address][province]': state,
       'checkout[shipping_address][zip]': profile.zip,
-      'checkout[shipping_address][phone]': profile.phoneNumber,
+      'checkout[shipping_address][phone]': phone,
       'checkout[client_details][browser_width]': 1366,
       'checkout[client_details][browser_height]': 581,
       'checkout[client_details][javascript_enabled]': 1
@@ -331,7 +345,7 @@ function sendPayment(session: SessionConfig, config: ShopifyConfig): Promise<*> 
         number: cardNum,
         verification_value: payment.cvv,
         name: payment.cardName,
-        month: payment.expMonth,
+        month: parseInt(payment.expMonth, 10),
         year: payment.expYear
       }
     };

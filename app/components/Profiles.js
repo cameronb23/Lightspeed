@@ -4,6 +4,8 @@ import React, { Component } from 'react';
 import { List, Header, Grid, Segment, Button, Divider } from 'semantic-ui-react';
 import { Form, Input, Dropdown } from 'formsy-semantic-ui-react';
 
+import { addProfile, updateProfile, removeProfile } from '../actions/profiles';
+
 import { States } from '../utils/states';
 import { Months } from '../utils/card-expiry';
 
@@ -40,9 +42,48 @@ class Profiles extends Component {
   onSubmit(formData: Object) {
     if (this.state.currentItem) {
       // update profile
+      const id = this.state.currentItem.id;
+      if (id === null) {
+        return;
+      }
+
+      this.props.dispatch(updateProfile(
+        id,
+        formData
+      ));
     } else {
-      // new profile
+      console.log(formData);
+
+      const newData = Object.assign({}, formData, {
+        payment: {
+          expYear: parseInt(formData.payment.expYear, 8)
+        }
+      });
+
+      this.props.dispatch(addProfile(
+        newData
+      ));
     }
+  }
+
+  handleDeleteClick() {
+    if (this.state.currentItem == null) {
+      return;
+    }
+
+    const id = this.state.currentItem.id;
+
+    if (id == null) {
+      return null;
+    }
+
+    this.props.dispatch(removeProfile(
+      id
+    ));
+
+    this.setState({
+      currentItem: null
+    });
   }
 
   render() {
@@ -241,11 +282,36 @@ class Profiles extends Component {
 
               <Divider />
 
+              <Input
+                name="title"
+                label="Profile Name"
+                required
+                width={8}
+                value={this.state.currentItem ? this.state.currentItem.title : null}
+              />
+
               <Form.Group inline>
-                <Button content="Submit" color="blue" />
+                <Button content="Save" color="blue" />
                 <Button
+                  type="button"
                   content="Clear"
-                  onClick={() => this.form.reset()}
+                  onClick={() => {
+                    this.form.reset();
+                    this.setState({
+                      currentItem: null
+                    });
+                  }}
+                />
+                <Button
+                  type="button"
+                  icon="close"
+                  content="Delete"
+                  negative
+                  floated="right"
+                  onClick={() => {
+                    this.form.reset();
+                    this.handleDeleteClick();
+                  }}
                 />
               </Form.Group>
             </Form>

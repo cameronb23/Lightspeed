@@ -62,6 +62,7 @@ class Tasks extends Component {
               <Table.HeaderCell>ID</Table.HeaderCell>
               <Table.HeaderCell>Type</Table.HeaderCell>
               <Table.HeaderCell>URL</Table.HeaderCell>
+              <Table.HeaderCell>Checkout Profile</Table.HeaderCell>
               <Table.HeaderCell width={1}>Active</Table.HeaderCell>
               <Table.HeaderCell>Status</Table.HeaderCell>
               <Table.HeaderCell>Actions</Table.HeaderCell>
@@ -98,6 +99,7 @@ class Tasks extends Component {
                 <Table.Cell>{data.id}</Table.Cell>
                 <Table.Cell>{data.type}</Table.Cell>
                 <Table.Cell>{data.url}</Table.Cell>
+                <Table.Cell>{data.checkout_profile.title}</Table.Cell>
                 <Table.Cell>
                   <Loader size="tiny" indeterminate inline="centered" active={running} />
                   { success || error ? <Icon color={color} name={icon} size="medium" /> : null }
