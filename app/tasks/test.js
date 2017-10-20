@@ -1,4 +1,4 @@
-import Shopify from './index';
+import { Shopify } from './shopify/index';
 
 const cp = {
   email: 'john@google.com',
@@ -39,12 +39,16 @@ const newCp = {
   }
 };
 
+const a = (b: string) => {
+  console.log(b);
+};
+
 const s = new Shopify(1, {
   base_url: 'https://offthehook.ca',
   keywords: ['sd', 'sa'],
-  checkout_profile: cp,
+  checkout_profile: newCp,
   userAgent: 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
   proxies: []
-});
+}, a);
 
 s.start();

@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import _ from 'underscore';
-import Shopify from './shopify';
+import { Shopify } from './shopify/index';
 import type { TaskSettings } from '../actions/tasks';
 
 const tasks = [];

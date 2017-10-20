@@ -102,7 +102,7 @@ class Tasks extends Component {
                 <Table.Cell>{data.checkout_profile.title}</Table.Cell>
                 <Table.Cell>
                   <Loader size="tiny" indeterminate inline="centered" active={running} />
-                  { success || error ? <Icon color={color} name={icon} size="medium" /> : null }
+                  { success || error ? <Icon color={color} name={icon} size="tiny" /> : null }
                 </Table.Cell>
                 <Table.Cell>
                   {status[1]}

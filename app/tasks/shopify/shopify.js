@@ -5,7 +5,7 @@ import cheerio from 'cheerio';
 import chalk from 'chalk';
 import moment from 'moment';
 import _ from 'underscore';
-import { parse, format } from 'libphonenumber-js';
+import { parse, format, isValidNumber } from 'libphonenumber-js';
 import { solve } from '../../utils/captcha_utils';
 import Task from '../task';
 import { States } from '../../utils/states';
@@ -47,6 +47,11 @@ type ItemVariant = {
   handle: string,
   id: string
 };
+
+function CheckoutException(errorMessage: string) {
+  this.value = errorMessage;
+  (this.prototype: any).toString = () => `Checkout Exception(${this.message})`; // eslint-disable-line flowtype/no-weak-types
+}
 
 function determineJsonAvailability(config: ShopifyConfig): Promise<boolean> {
   return new Promise(async (resolve) => {
@@ -144,15 +149,20 @@ function sendContactInfo(
     // check for /products.json availability
     const profile = config.checkout_profile;
 
-    const phone = format(parse(profile.phoneNumber), 'National');
-    // const phone = format(parse(profile.phoneNumber), 'International');
+    // const parsedPhone = parse(profile.phoneNumber).phone;
 
-    let state = profile.state; 
+    // if (!isValidNumber(parsedPhone)) {
+    //   return reject('Error in phone formatting.');
+    // }
+
+    const phone = format(profile.phoneNumber, 'National');
+
+    let state = profile.state;
 
     const possibleState = _.findWhere(States, { abbreviation: profile.state });
 
     if (possibleState != null) {
-      state = possibleState;
+      state = possibleState.name;
     }
 
     const form = {
@@ -198,7 +208,7 @@ function sendContactInfo(
       resolveWithFullResponse: true,
       followAllRedirects: true,
       jar: session.cookieJar,
-      formData: form
+      form
     };
 
     try {
@@ -288,7 +298,7 @@ function sendShippingMethod(
       resolveWithFullResponse: true,
       followAllRedirects: true,
       jar: session.cookieJar,
-      formData: {
+      form: {
         utf8: '✓',
         _method: 'patch',
         authenticity_token: session.auth_token,
@@ -409,7 +419,7 @@ async function validatePayment(session: SessionConfig, config: ShopifyConfig): P
     resolveWithFullResponse: true,
     followAllRedirects: true,
     jar: session.cookieJar,
-    formData: {
+    form: {
       utf8: '✓',
       _method: 'patch',
       authenticity_token: session.auth_token,
@@ -454,13 +464,8 @@ async function validatePayment(session: SessionConfig, config: ShopifyConfig): P
   }
 }
 
-function CheckoutException(errorMessage: string) {
-  this.value = errorMessage;
-  (this.prototype: any).toString = () => `Checkout Exception(${this.message})`; // eslint-disable-line flowtype/no-weak-types
-}
-
 class ShopifyTask extends Task {
-  id: number;
+  id: string;
   config: ShopifyConfig;
   session: ?SessionConfig = null;
   product: ?ItemVariant = null;
@@ -472,7 +477,7 @@ class ShopifyTask extends Task {
 
   statusUpdate: Function;
 
-  constructor(id: number, config: ShopifyConfig, statusUpdateCallback: Function) {
+  constructor(id: string, config: ShopifyConfig, statusUpdateCallback: Function) {
     super(id);
     this.config = config;
     this.statusUpdate = statusUpdateCallback;
@@ -502,10 +507,11 @@ class ShopifyTask extends Task {
 
   endTime(time: moment, message: string, final: boolean = false) {
     const startTime = final ? this.taskStartTime : this.timerStart;
-    let dur = moment.duration(time.diff(startTime));
-    dur = chalk.blue(dur.milliseconds());
+    const dur = moment.duration(time.diff(startTime));
+    const durText = chalk.blue(dur.milliseconds());
 
-    this.log(`${message} [${dur}ms]`);
+    this.log(`${message} [${durText}ms]`);
+    return dur;
   }
 
   log(message: string) {
@@ -578,8 +584,11 @@ class ShopifyTask extends Task {
 
       this.chooseShippingMethod();
     } catch (e) {
+      console.log(e);
       this.log(`Unable to send contact information: ${e}`);
-      return this.sendContactInformation();
+      return setTimeout(() => {
+        this.sendContactInformation();
+      }, 1500);
     }
   }
 
@@ -655,8 +664,8 @@ class ShopifyTask extends Task {
 
 
       if (response) {
-        this.endTime(moment(), 'Checkout successful.', true);
-        this.statusUpdate('1-Checkout successful!');
+        const duration = this.endTime(moment(), 'Checkout successful.', true);
+        this.statusUpdate(`1-Checkout successful! (${duration.milliseconds()})`);
       }
     } catch (e) {
       this.log(`Error sending payment: ${e}`);
