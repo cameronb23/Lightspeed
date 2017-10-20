@@ -17,8 +17,27 @@ const cp = {
     expMonth: 10,
     expYear: 2021
   }
-}
+};
 
+
+const newCp = {
+  email: 'john@google.com',
+  firstName: 'John',
+  lastName: 'Jones',
+  address1: '300 Cupertino Lane',
+  address2: '',
+  zip: '04103',
+  city: 'Portland',
+  state: 'ME',
+  phoneNumber: '6616911114',
+  payment: {
+    cardNumber: '4859102216685048',
+    cardName: 'John Jones',
+    cvv: '609',
+    expMonth: 10,
+    expYear: 2021
+  }
+};
 
 const s = new Shopify(1, {
   base_url: 'https://offthehook.ca',

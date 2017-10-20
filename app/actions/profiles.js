@@ -1,4 +1,5 @@
 // @flow
+import uuid from 'uuid/v4';
 import type { CheckoutProfile } from '../globals';
 
 export const ADD_PROFILE = 'PROFILE_ADD';
@@ -6,28 +7,28 @@ export const REMOVE_PROFILE = 'PROFILE_REMOVE';
 export const UPDATE_PROFILE = 'PROFILE_UPDATE';
 
 
-let counter = 0;
+// TODO: add saga for saving profiles to file.
 
-export function addTask(profile: CheckoutProfile) {
-  counter += 1;
+export function addProfile(profile: CheckoutProfile) {
+  const id = uuid();
   const newProfile = Object.assign({}, profile, {
-    id: counter
+    id
   });
   return {
     type: ADD_PROFILE,
-    id: counter,
+    id,
     data: newProfile
   };
 }
 
-export function removeTask(profileId: number) {
+export function removeTask(profileId: string) {
   return {
     type: REMOVE_PROFILE,
     id: profileId
   };
 }
 
-export function updateProfile(profileId: number, newData: CheckoutProfile) {
+export function updateProfile(profileId: string, newData: CheckoutProfile) {
   return {
     type: UPDATE_PROFILE,
     id: profileId,

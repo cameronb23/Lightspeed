@@ -156,7 +156,7 @@ function sendContactInfo(
       'checkout[shipping_address][address1]': profile.address1,
       'checkout[shipping_address][address2]': profile.address2,
       'checkout[shipping_address][city]': profile.city,
-      'checkout[shipping_address][country]': 'United States',
+      'checkout[shipping_address][country]': profile.country,
       'checkout[shipping_address][province]': profile.state,
       'checkout[shipping_address][zip]': profile.zip,
       'checkout[shipping_address][phone]': profile.phoneNumber,

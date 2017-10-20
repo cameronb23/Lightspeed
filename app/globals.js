@@ -1,7 +1,8 @@
 // @flow
 
 export type CheckoutProfile = {
-  id: ?number,
+  id: ?string,
+  title: string,
   email: string,
   firstName: string,
   lastName: string,
@@ -10,6 +11,7 @@ export type CheckoutProfile = {
   zip: string,
   city: string,
   state: string,
+  country: string,
   phoneNumber: string,
   payment: {
     cardNumber: string,
