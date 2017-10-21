@@ -57,7 +57,7 @@ export function sendStopCommand(task: TaskType) {
   // $FlowFixMe
   return dispatch => dispatch({
     type: STOP_TASK,
-    payload: stopTask(task)
+    payload: stopTask(task.id)
   }).catch(err => {
     console.log(err);
   });

@@ -5,6 +5,7 @@ import type { CheckoutProfile } from '../globals';
 export const ADD_PROFILE = 'PROFILE_ADD';
 export const REMOVE_PROFILE = 'PROFILE_REMOVE';
 export const UPDATE_PROFILE = 'PROFILE_UPDATE';
+export const SET_PROFILES = 'INTERNAL_SET_PROFILES';
 
 
 // TODO: add saga for saving profiles to file.
@@ -33,5 +34,12 @@ export function updateProfile(profileId: string, newData: CheckoutProfile) {
     type: UPDATE_PROFILE,
     id: profileId,
     data: newData
+  };
+}
+
+export function setProfiles(profiles: Array<CheckoutProfile>) {
+  return {
+    type: SET_PROFILES,
+    data: profiles
   };
 }

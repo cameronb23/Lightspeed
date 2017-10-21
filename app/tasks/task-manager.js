@@ -15,7 +15,8 @@ export async function startTask(taskData: TaskSettings, updateStatusCallback: Fu
           keywords: taskData.data.keywords,
           proxies: taskData.proxies,
           checkout_profile: taskData.checkout_profile,
-          userAgent: taskData.data.userAgent
+          userAgent: taskData.data.userAgent,
+          size: taskData.data.size
         },
         updateStatusCallback
       );
@@ -37,7 +38,7 @@ export async function startTask(taskData: TaskSettings, updateStatusCallback: Fu
   }
 }
 
-export async function stopTask(taskId: number): boolean {
+export async function stopTask(taskId: string): boolean {
   const task = _.findWhere(tasks, { id: taskId });
 
   if (task == null) {

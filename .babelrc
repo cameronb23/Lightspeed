@@ -7,7 +7,13 @@
     "stage-0",
     "react"
   ],
-  "plugins": ["add-module-exports", "dynamic-import-webpack"],
+  "plugins": [
+    "add-module-exports",
+    "dynamic-import-webpack",
+    ["babel-plugin-transform-builtin-extend", {
+      "globals": ["Error", "Array"]
+    }]
+  ],
   "env": {
     "production": {
       "presets": ["react-optimize"],

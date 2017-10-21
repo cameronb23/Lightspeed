@@ -1,7 +1,7 @@
 // @flow
 import React, { Component } from 'react';
 import { Table, Loader, Icon, Button } from 'semantic-ui-react';
-import { sendStartCommand, sendStopCommand } from '../actions/tasks';
+import { sendStartCommand, sendStopCommand, removeTask } from '../actions/tasks';
 
 class Tasks extends Component {
   props: {
@@ -49,6 +49,24 @@ class Tasks extends Component {
     });
   }
 
+  async handleClearAll() {
+    this.setState({
+      loading: true
+    });
+
+    this.props.tasks.forEach(t => {
+      this.props.dispatch(sendStopCommand(t));
+    });
+
+    this.props.tasks.forEach(t => {
+      this.props.dispatch(removeTask(t.id));
+    });
+
+    this.setState({
+      loading: false
+    });
+  }
+
   render() {
     const { tasks } = this.props;
     return (
@@ -71,7 +89,7 @@ class Tasks extends Component {
           footerRow={(
             <Table.Row>
               <Table.HeaderCell colSpan={6}>
-                <Button floated="right" icon labelPosition="left" negative size="small">
+                <Button floated="right" icon labelPosition="left" negative size="small" onClick={this.handleClearAll.bind(this)}>
                   <Icon name="close" /> Clear All
                 </Button>
                 <Button size="small" positive onClick={this.handleStartAllTasks.bind(this)}>Start All</Button>
@@ -80,8 +98,20 @@ class Tasks extends Component {
             </Table.Row>
           )}
           renderBodyRow={data => {
-            const status = data.status.split('-');
-            const statusCode = parseInt(status[0], 16);
+            let str = data.status;
+            let status = null;
+            let statusCode = null;
+
+            if (str.startsWith('-')) {
+              str = str.substring(1);
+              statusCode = -1;
+            } else {
+              statusCode = parseInt(str.split('-')[0], 16);
+            }
+
+            status = str.split('-')[1];
+
+            console.log(`Status: ${status} | Code: ${statusCode}`);
 
             const error = (statusCode === -1);
             const running = (statusCode === 0);
@@ -102,10 +132,10 @@ class Tasks extends Component {
                 <Table.Cell>{data.checkout_profile.title}</Table.Cell>
                 <Table.Cell>
                   <Loader size="tiny" indeterminate inline="centered" active={running} />
-                  { success || error ? <Icon color={color} name={icon} size="tiny" /> : null }
+                  { success || error ? <Icon color={color} name={icon} size="small" style={{ textAlign: 'center' }} /> : null }
                 </Table.Cell>
                 <Table.Cell>
-                  {status[1]}
+                  {status}
                 </Table.Cell>
               </Table.Row>
             );

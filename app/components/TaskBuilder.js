@@ -15,12 +15,12 @@ const taskTypeOptions = [
 ];
 
 const taskSizeOptions = [
-  { key: '9M', text: 'US 9', value: '9_MENS_US' },
-  { key: '9.5M', text: 'US 9.5', value: '9.5_MENS_US' },
-  { key: '10M', text: 'US 10', value: '10_MENS_US' },
-  { key: '10.5M', text: 'US 10.5', value: '10.5_MENS_US' },
-  { key: '11M', text: 'US 11', value: '11_MENS_US' },
-  { key: '11.5M', text: 'US 11.5', value: '11.5_MENS_US' }
+  { key: '9_MENS_US', text: 'US 9', value: '9M' },
+  { key: '9.5_MENS_US', text: 'US 9.5', value: '9.5M' },
+  { key: '10_MENS_US', text: 'US 10', value: '10M' },
+  { key: '10.5_MENS_US', text: 'US 10.5', value: '10.5M' },
+  { key: '11_MENS_US', text: 'US 11', value: '11M' },
+  { key: '11.5_MENS_US', text: 'US 11.5', value: '11.5M' }
 ];
 
 const keywordDescriptor = 'Enter keywords here separated by a comma. + and - supported.';
@@ -59,8 +59,9 @@ class TaskBuilder extends Component {
         type: formData.type,
         url: formData.url,
         data: {
-          keywords: formData.keywords,
-          userAgent: 'blah'
+          keywords: formData.keywords.split(','),
+          userAgent: 'blah',
+          size: formData.size
         },
         proxies: formData.proxies,
         checkout_profile: _.findWhere(this.props.profiles, { id: formData.profile })

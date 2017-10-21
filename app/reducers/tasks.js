@@ -7,13 +7,13 @@ import { ADD_TASK, UPDATE_TASK, REMOVE_TASK } from '../actions/tasks';
 
 export type actionType = {
   type: string,
-  id: number,
+  id: string,
   data: TaskType,
   status: ?string
 };
 
 export type TaskType = {
-  id: number,
+  id: string,
   type: string,
   url: string,
   checkout_profile: CheckoutProfile,

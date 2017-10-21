@@ -5,7 +5,8 @@ import cheerio from 'cheerio';
 import chalk from 'chalk';
 import moment from 'moment';
 import _ from 'underscore';
-import { parse, format, isValidNumber } from 'libphonenumber-js';
+import { format } from 'libphonenumber-js';
+import scanOnce, { scanAtom } from './shopify_monitor';
 import { solve } from '../../utils/captcha_utils';
 import Task from '../task';
 import { States } from '../../utils/states';
@@ -16,7 +17,8 @@ type ShopifyConfig = {
   keywords: Array<string>,
   checkout_profile: CheckoutProfile,
   userAgent: string,
-  proxies: Array<string>
+  proxies: Array<string>,
+  size: string
 };
 
 type SessionConfig = {
@@ -30,7 +32,8 @@ type SessionConfig = {
   currentStep: string,
   sitekey: string,
   shipping_methods: ?Array<ShippingMethod>,
-  payment_vals: ?PaymentValues
+  payment_vals: ?PaymentValues,
+  oos: boolean
 };
 
 type ShippingMethod = {
@@ -53,27 +56,45 @@ function CheckoutException(errorMessage: string) {
   (this.prototype: any).toString = () => `Checkout Exception(${this.message})`; // eslint-disable-line flowtype/no-weak-types
 }
 
-function determineJsonAvailability(config: ShopifyConfig): Promise<boolean> {
-  return new Promise(async (resolve) => {
-    // check for /products.json availability
-    const opts = {
-      url: `${config.base_url}/products.json`,
-      method: 'GET',
-      resolveWithFullResponse: true
-    };
+async function findVariant(config: ShopifyConfig, handle: string) {
+  const opts = {
+    url: `${config.base_url}/products/${handle}.json`,
+    method: 'GET',
+    headers: {
+      Origin: config.base_url,
+      'User-Agent': config.userAgent,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.8'
+    },
+    json: true
+  };
 
-    try {
-      const response = await request(opts);
+  const json = await request(opts);
 
-      if (response.statusCode !== 200) {
-        return resolve(false);
-      }
+  const variants = json.product.variants;
 
-      return resolve(true);
-    } catch (err) {
-      return resolve(false);
+  if (config.size.endsWith('M')) {
+    // mens shoe size
+    const desiredSize = config.size.replace('M', '');
+
+    const matchDot = _.findWhere(variants, { title: desiredSize });
+    const matchComma = _.findWhere(variants, { title: desiredSize.replace('.', ',') });
+
+    let match = null;
+
+    if (matchComma !== undefined) {
+      match = matchComma;
+    } else if (matchDot !== undefined) {
+      match = matchDot;
     }
-  });
+
+    if (match !== null) {
+      return {
+        handle,
+        id: match.id
+      };
+    }
+  }
 }
 
 function addToCart(
@@ -102,6 +123,11 @@ function addToCart(
       const response = await request(opts);
       const $ = await cheerio.load(response.body);
       const checkout = response.request.uri.href;
+      let oos = false;
+
+      if (checkout.includes('/stock_problems')) {
+        oos = true;
+      }
 
       const urlData = checkout.replace(`${config.base_url}/`, '');
 
@@ -132,7 +158,8 @@ function addToCart(
         sitekey,
         currentStep: 'contact_information',
         shipping_methods: null,
-        payment_vals: null
+        payment_vals: null,
+        oos
       });
     } catch (e) {
       return reject(e);
@@ -214,11 +241,19 @@ function sendContactInfo(
     try {
       const response = await request(opts);
 
+      let oos = false;
+      const newUrl = response.request.uri.href;
+
+      if (newUrl.includes('/stock_problems')) {
+        oos = true;
+      }
+
       const $ = await cheerio.load(response.body);
       const token = $('input[name="authenticity_token"]').val();
 
       const newSession = Object.assign({}, session, {
         auth_token: token,
+        oos
       });
 
       return resolve(newSession);
@@ -254,6 +289,13 @@ async function retrieveShippingRates(session: SessionConfig, config: ShopifyConf
       return retrieveShippingRates(session, config);
     }
 
+    const newUrl = response.request.uri.href;
+    let oos = false;
+
+    if (newUrl.includes('/stock_problems')) {
+      oos = true;
+    }
+
     const $ = await cheerio.load(response.body);
     const elements = $('[data-checkout-total-shipping-cents]');
 
@@ -269,7 +311,8 @@ async function retrieveShippingRates(session: SessionConfig, config: ShopifyConf
 
     const newSession = Object.assign({}, session, {
       auth_token: token,
-      shipping_methods: items
+      shipping_methods: items,
+      oos
     });
 
     return newSession;
@@ -319,6 +362,13 @@ function sendShippingMethod(
         return reject(response.statusCode);
       }
 
+      const newUrl = response.request.uri.href;
+      let oos = false;
+
+      if (newUrl.includes('/stock_problems')) {
+        oos = true;
+      }
+
       const $ = await cheerio.load(response.body);
 
       const token = $('input[name="authenticity_token"]').val();
@@ -329,7 +379,8 @@ function sendShippingMethod(
         payment_vals: {
           gateway,
           sessionToken: null
-        }
+        },
+        oos
       });
 
       return resolve(newSession);
@@ -456,6 +507,8 @@ async function validatePayment(session: SessionConfig, config: ShopifyConfig): P
       return true;
     } else if (url.includes('?validate=true')) {
       throw new CheckoutException('Payment declined');
+    } else if (url.includes('/stock_problems')) {
+      throw new CheckoutException('Out of Stock');
     }
 
     throw new CheckoutException('Error submitting payment.');
@@ -465,21 +518,22 @@ async function validatePayment(session: SessionConfig, config: ShopifyConfig): P
 }
 
 class ShopifyTask extends Task {
-  id: string;
+  id: number;
   config: ShopifyConfig;
   session: ?SessionConfig = null;
   product: ?ItemVariant = null;
-  json: ?boolean = null;
   taskStartTime: number;
   stopped: boolean = false;
+  timerId: number;
 
   timerStart: moment;
 
   statusUpdate: Function;
 
-  constructor(id: string, config: ShopifyConfig, statusUpdateCallback: Function) {
+  constructor(id: number, config: ShopifyConfig, statusUpdateCallback: Function) {
     super(id);
     this.config = config;
+    console.log(this.config);
     this.statusUpdate = statusUpdateCallback;
 
     this.product = {
@@ -494,11 +548,13 @@ class ShopifyTask extends Task {
     this.log('Started task.');
     this.statusUpdate('0-Starting');
     this.taskStartTime = moment().milliseconds();
-    this.atc();
+    this.scan();
   }
 
   async stop() {
     this.stopped = true;
+    clearInterval(this.timerId);
+    this.statusUpdate('-1-Stopped');
   }
 
   startTime(time: moment) {
@@ -521,11 +577,36 @@ class ShopifyTask extends Task {
     console.log(str);
   }
 
-  async scan() {
+  scan() {
     // scan for a product using sitemap or products.json
-    if (this.json == null) {
-      this.json = await determineJsonAvailability(this.config);
-    }
+    this.startTime(moment());
+    this.log('Scanning for product.');
+    this.statusUpdate('0-Scanning for product.');
+    this.timerId = setInterval(async () => {
+      const matches = await scanAtom(this.config);
+      console.log(`TYPE: ${typeof matches}`);
+      console.log(matches);
+
+      if (matches.length > 0) {
+        // TODO: PROMPT FOR INPUT
+        const prod = matches[0];
+
+        const variant = await findVariant(this.config, prod.handle);
+
+        if (variant == null) {
+          console.log('Size not found.');
+          clearInterval(this.timerId);
+          this.statusUpdate('-1-Size not loaded');
+        } else {
+          this.product = variant;
+          console.log(`Found product with handle "${prod.handle}" and ID ${variant.id}`);
+
+          this.endTime(moment(), 'Product found.');
+          clearInterval(this.timerId);
+          this.atc();
+        }
+      }
+    }, 1500);
   }
 
   async atc() {
@@ -561,6 +642,12 @@ class ShopifyTask extends Task {
     const session = this.session;
     if (session == null) {
       this.log('Unable to send info! No session!');
+      return;
+    }
+
+    if (session.oos) {
+      this.stop();
+      this.statusUpdate('-1-Out of Stock');
       return;
     }
 
@@ -600,6 +687,12 @@ class ShopifyTask extends Task {
     const session = this.session;
     if (session == null) {
       this.log('Unable to get shipping rates! No session!');
+      return;
+    }
+
+    if (session.oos) {
+      this.stop();
+      this.statusUpdate('-1-Out of Stock');
       return;
     }
 
@@ -646,6 +739,11 @@ class ShopifyTask extends Task {
       return;
     }
 
+    if (session.oos) {
+      this.stop();
+      this.statusUpdate('-1-Out of Stock');
+      return;
+    }
 
     try {
       this.startTime(moment());
@@ -655,17 +753,23 @@ class ShopifyTask extends Task {
       session = await sendPayment(session, this.config);
 
       this.endTime(moment(), 'Sent payment details successfully.');
-
-      this.startTime(moment());
-      this.log('Validating payment...');
-      this.statusUpdate('0-Validating payment');
-
-      const response = await validatePayment(session, this.config);
-
-
-      if (response) {
-        const duration = this.endTime(moment(), 'Checkout successful.', true);
-        this.statusUpdate(`1-Checkout successful! (${duration.milliseconds()})`);
+      
+      try {
+        this.startTime(moment());
+        this.log('Validating payment...');
+        this.statusUpdate('0-Validating payment');
+  
+        const response = await validatePayment(session, this.config);
+  
+  
+        if (response) {
+          const duration = this.endTime(moment(), 'Checkout successful.', true);
+          this.statusUpdate(`1-Checkout successful! (${duration.milliseconds()})`);
+        }
+      } catch (e) {
+        this.stop();
+        this.endTime(moment(), 'Checkout failed.', true);
+        this.statusUpdate(`-1-${e.errorMessage}`);
       }
     } catch (e) {
       this.log(`Error sending payment: ${e}`);

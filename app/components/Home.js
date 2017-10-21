@@ -1,13 +1,16 @@
 // @flow
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
+import { Button } from 'semantic-ui-react';
+import storage from 'electron-json-storage';
 
 export default class Home extends Component {
+
+  handleClick() {
+    console.log(storage.getDataPath());
+  }
   render() {
     return (
-      <div>
-        <Link to="/tasks">to Tasks</Link>
-      </div>
+      <Button onClick={this.handleClick.bind(this)} label="Hello" />
     );
   }
 }

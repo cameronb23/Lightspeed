@@ -30,7 +30,7 @@ export default class App extends Component {
     return (
       <Sidebar.Pushable>
         <Sidebar as={Menu} style={{overflowX: 'visible !important'}} animation="overlay" width="thin" visible={this.state.sidebarVisible} icon="labeled" vertical borderless>
-          <Menu.Item name="home">
+          <Menu.Item as={Link} name="home" to="/">
             <Icon name="home" />
             Home
           </Menu.Item>

@@ -2,7 +2,7 @@
 // @flow
 import _ from 'underscore';
 import type { CheckoutProfile } from '../globals';
-import { ADD_PROFILE, REMOVE_PROFILE, UPDATE_PROFILE } from '../actions/profiles';
+import { ADD_PROFILE, REMOVE_PROFILE, UPDATE_PROFILE, SET_PROFILES } from '../actions/profiles';
 
 export type actionType = {
   type: string,
@@ -12,49 +12,51 @@ export type actionType = {
 
 export type profileStateType = Array<CheckoutProfile>;
 
-const defaultState = [{
-  id: 'abc123',
-  title: 'Test Profile',
-  email: 'john@google.com',
-  firstName: 'John',
-  lastName: 'Jones',
-  address1: '300 Cupertino Lane',
-  address2: '',
-  zip: '04103',
-  city: 'Portland',
-  state: 'ME',
-  country: 'United States',
-  phoneNumber: '6616911114',
-  payment: {
-    cardNumber: '4859102216685048',
-    cardName: 'John Jones',
-    cvv: '609',
-    expMonth: 10,
-    expYear: 2021
-  }
-}, {
-  id: 'abbb',
-  title: 'Test Profile',
-  email: 'john@google.com',
-  firstName: 'John',
-  lastName: 'Jones',
-  address1: '312 Cupertino Lane',
-  address2: '',
-  zip: '04103',
-  city: 'Portland',
-  state: 'AK',
-  country: 'United States',
-  phoneNumber: '6616911114',
-  payment: {
-    cardNumber: '4859102216685048',
-    cardName: 'John Jones',
-    cvv: '609',
-    expMonth: 10,
-    expYear: 2021
-  }
-}];
 
-export default function profiles(state: profileStateType = defaultState, action: actionType) { // eslint-disable-line max-len
+
+// const defaultState = [{
+//   id: 'abc123',
+//   title: 'Test Profile',
+//   email: 'john@google.com',
+//   firstName: 'John',
+//   lastName: 'Jones',
+//   address1: '300 Cupertino Lane',
+//   address2: '',
+//   zip: '04103',
+//   city: 'Portland',
+//   state: 'ME',
+//   country: 'United States',
+//   phoneNumber: '6616911114',
+//   payment: {
+//     cardNumber: '4859102216685048',
+//     cardName: 'John Jones',
+//     cvv: '609',
+//     expMonth: 10,
+//     expYear: 2021
+//   }
+// }, {
+//   id: 'abbb',
+//   title: 'Test Profile',
+//   email: 'john@google.com',
+//   firstName: 'John',
+//   lastName: 'Jones',
+//   address1: '312 Cupertino Lane',
+//   address2: '',
+//   zip: '04103',
+//   city: 'Portland',
+//   state: 'AK',
+//   country: 'United States',
+//   phoneNumber: '6616911114',
+//   payment: {
+//     cardNumber: '4859102216685048',
+//     cardName: 'John Jones',
+//     cvv: '609',
+//     expMonth: 10,
+//     expYear: 2021
+//   }
+// }];
+
+export default function profiles(state: profileStateType = [], action: actionType) { // eslint-disable-line max-len
   switch (action.type) {
     case ADD_PROFILE: {
       if (action.data === null) {
@@ -95,6 +97,14 @@ export default function profiles(state: profileStateType = defaultState, action:
       const newObj = Object.assign({}, obj, action.data);
       arr.push(newObj);
       return arr;
+    }
+    case SET_PROFILES: {
+      if (action.data == null) {
+        console.log('Must provide data.');
+        return state;
+      }
+
+      return Object.assign({}, action.data);
     }
     default:
       return state;

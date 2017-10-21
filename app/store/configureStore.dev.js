@@ -1,15 +1,18 @@
 import { createStore, applyMiddleware, compose } from 'redux';
 import thunk from 'redux-thunk';
 import promiseMiddleware from 'redux-promise-middleware';
+import createSagaMiddleware from 'redux-saga';
 import { createHashHistory } from 'history';
 import { routerMiddleware, routerActions } from 'react-router-redux';
 import { createLogger } from 'redux-logger';
 import rootReducer from '../reducers';
 
+import { updateProfileStoreSaga } from '../redux/sagas';
+
 
 const history = createHashHistory();
 
-const configureStore = (initialState?: counterStateType) => {
+const configureStore = (initialState?: Object) => {
   // Redux Configuration
   const middleware = [];
   const enhancers = [];
@@ -30,6 +33,9 @@ const configureStore = (initialState?: counterStateType) => {
 
   const promise = promiseMiddleware();
   middleware.push(promise);
+
+  const sagaMiddleware = createSagaMiddleware();
+  middleware.push(sagaMiddleware);
 
   // Redux DevTools Configuration
   const actionCreators = {
@@ -57,6 +63,8 @@ const configureStore = (initialState?: counterStateType) => {
       store.replaceReducer(require('../reducers')) // eslint-disable-line global-require
     );
   }
+
+  sagaMiddleware.run(updateProfileStoreSaga);
 
   return store;
 };

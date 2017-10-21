@@ -1,7 +1,7 @@
 // @flow
 
 export type CheckoutProfile = {
-  id: ?string,
+  id: string,
   title: string,
   email: string,
   firstName: string,
