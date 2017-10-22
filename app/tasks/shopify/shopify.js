@@ -627,6 +627,11 @@ class ShopifyTask extends Task {
       this.session = await addToCart(this.config, this.product);
 
       this.endTime(moment(), 'Added to cart.');
+
+      if (this.session.current_url.includes('throttle')) {
+        // BEING THROTTLED
+      }
+
       this.sendContactInformation();
     } catch (e) {
       this.log(`Failed to add to cart: ${e}`);
