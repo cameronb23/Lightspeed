@@ -1,5 +1,3 @@
-@import '~semantic-ui-css/semantic.css';
-
-html, body, #root, #root>div {
-  height: 100%
+html {
+  background-color: #303030
 }

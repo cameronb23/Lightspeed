@@ -2,64 +2,103 @@
 // @flow
 import React, { Component } from 'react';
 import type { Children } from 'react';
-import { Link } from 'react-router-dom';
+import { connect } from 'react-redux';
 
-import { Sidebar, Menu, Segment, Icon, Button, Divider } from 'semantic-ui-react';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import createMuiTheme from 'material-ui/styles/createMuiTheme';
+import { withStyles } from 'material-ui/styles';
+import Grid from 'material-ui/Grid';
 
-export default class App extends Component {
+import AppDrawer from '../components/AppDrawer';
+
+import { loadProfiles, loadSettings } from '../utils/cache';
+import { setAppSettings } from '../actions/app';
+import { setProfiles } from '../actions/profiles';
+
+import { toggleTheme } from '../actions/app';
+
+const styles = theme => ({
+  root: {
+    flex: 1,
+    flexGrow: 1
+  },
+  header: {
+    marginBottom: 70
+  }
+});
+
+class App extends Component {
   props: {
-    children: Children
+    children: Children,
+    app: {
+      theme: Object
+    },
+    classes: Object,
+    dispatch: Function
   };
 
-  state: {
-    sidebarVisible: boolean
-  };
+  async componentDidMount() {
+    console.log('Loading profiles...');
 
-  constructor(props: Object) {
-    super(props);
+    try {
+      const app = await loadSettings();
+      const profiles = await loadProfiles();
 
-    this.state = {
-      sidebarVisible: true
-    };
+      // TODO: do something with app settings
+
+      console.log('Settings loaded');
+      if (app) {
+        this.props.dispatch(setAppSettings(app));
+      }
+
+      console.log('Profiles loaded');
+      console.log(profiles);
+      if (profiles.length > 0) {
+        this.props.dispatch(setProfiles(profiles));
+      }
+    } catch (e) {
+      console.log(e);
+    }
   }
 
-  toggleVisibility = () => this.setState({ sidebarVisible: !this.state.sidebarVisible })
+  switchTheme() {
+    this.props.dispatch(toggleTheme());
+  }
 
   render() {
-    // <Button basic attached="right" floated="left" icon="bars" onClick={this.toggleVisibility} />
+    const { classes, app } = this.props;
+
+    const theme = createMuiTheme(app.theme);
+
     return (
-      <Sidebar.Pushable>
-        <Sidebar as={Menu} style={{overflowX: 'visible !important'}} animation="overlay" width="thin" visible={this.state.sidebarVisible} icon="labeled" vertical borderless>
-          <Menu.Item as={Link} name="home" to="/">
-            <Icon name="home" />
-            Home
-          </Menu.Item>
-          <Menu.Item as={Link} name="task-editor" to="/taskbuilder">
-            <Icon name="pencil" />
-            Task Builder
-          </Menu.Item>
-          <Menu.Item as={Link} name="tasks" to="/tasks">
-            <Icon name="list" />
-            Tasks
-          </Menu.Item>
-          <Menu.Item as={Link} name="profiles" to="/profiles">
-            <Icon name="payment" />
-            Profiles
-          </Menu.Item>
-          <Menu.Item name="settings">
-            <Icon name="cogs" />
-            Settings
-          </Menu.Item>
-          <Button basic style={{ position: 'absolute', transform: 'translateX(100%)', top: 20, right: 0 }} attached="right" icon="bars" onClick={this.toggleVisibility} />
-        </Sidebar>
-        <Sidebar.Pusher>
-          <Segment basic>
-            <Button basic attached="left" icon="bars" onClick={this.toggleVisibility} />
-            <Divider horizontal>Lightspeed</Divider>
-            {this.props.children}
-          </Segment>
-        </Sidebar.Pusher>
-      </Sidebar.Pushable>
+      <div>
+        <MuiThemeProvider theme={theme}>
+          <div className={classes.root}>
+            <div className={classes.header}>
+              <AppDrawer theme={this.props.app.theme} handleThemeSwitch={this.switchTheme.bind(this)} />
+            </div>
+            <div className={classes.content}>
+              {this.props.children}
+            </div>
+          </div>
+        </MuiThemeProvider>
+      </div>
     );
   }
 }
+
+function mapStateToProps(state) {
+  return {
+    app: state.app
+  };
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    dispatch
+  };
+}
+
+const AppStyled = withStyles(styles, { withTheme: true })(App);
+
+export default connect(mapStateToProps, mapDispatchToProps)(AppStyled);

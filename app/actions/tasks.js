@@ -45,12 +45,16 @@ export function removeTask(taskId: number) {
 
 export function sendStartCommand(task: TaskType) {
   // $FlowFixMe
-  return dispatch => dispatch({
-    type: START_TASK,
-    payload: startTask(task, (status) => { dispatch(updateTaskStatus(task.id, status)); })
-  }).catch(err => {
-    console.log(err);
-  });
+  return (dispatch, getState) => {
+    const { app } = getState();
+
+    dispatch({
+      type: START_TASK,
+      payload: startTask(task, app, (status) => { dispatch(updateTaskStatus(task.id, status)); })
+    }).catch(err => {
+      console.log(err);
+    });
+  };
 }
 
 export function sendStopCommand(task: TaskType) {

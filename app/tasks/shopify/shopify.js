@@ -6,11 +6,11 @@ import chalk from 'chalk';
 import moment from 'moment';
 import _ from 'underscore';
 import { format } from 'libphonenumber-js';
-import scanOnce, { scanAtom } from './shopify_monitor';
+import { scanAtom } from './shopify_monitor';
 import { solve } from '../../utils/captcha_utils';
 import Task from '../task';
 import { States } from '../../utils/states';
-import type { CheckoutProfile } from '../../globals';
+import type { CheckoutProfile, AppSettings, Captcha } from '../../globals';
 
 type ShopifyConfig = {
   base_url: string,
@@ -73,9 +73,19 @@ async function findVariant(config: ShopifyConfig, handle: string) {
 
   const variants = json.product.variants;
 
-  if (config.size.endsWith('M')) {
-    // mens shoe size
-    const desiredSize = config.size.replace('M', '');
+  if (config.size.endsWith('_S')) {
+    // shoe size
+    const desiredSize = config.size.replace('_S', '');
+
+    // filter all non-numbers and non-decimals out
+    const newVariants = [];
+
+    for (let i = 0; i < variants.length; i += 1) {
+      newVariants.push({
+        ...variants[i],
+        title: variants[i].title.toLowerCase().replace(/[^\d.]/g, '')
+      });
+    }
 
     const matchDot = _.findWhere(variants, { title: desiredSize });
     const matchComma = _.findWhere(variants, { title: desiredSize.replace('.', ',') });
@@ -89,6 +99,48 @@ async function findVariant(config: ShopifyConfig, handle: string) {
     }
 
     if (match !== null) {
+      return {
+        handle,
+        id: match.id
+      };
+    }
+  } else if (config.size.endsWith('_A')) {
+    // apparel / clothing size
+    const desiredSize = config.size.replace('_A', '').toLowerCase();
+
+    const newVariants = [];
+
+    for (let i = 0; i < variants.length; i += 1) {
+      newVariants.push({
+        ...variants[i],
+        title: variants[i].title.toLowerCase()
+      });
+    }
+
+    const match = _.findWhere(newVariants, { title: desiredSize });
+
+    if (match != null) {
+      return {
+        handle,
+        id: match.id
+      };
+    }
+  } else if (config.size.endsWith('_MISC')) {
+    // miscellaneous size
+    const desiredSize = config.size.replace('_MISC', '').toLowerCase();
+
+    const newVariants = [];
+
+    for (let i = 0; i < variants.length; i += 1) {
+      newVariants.push({
+        ...variants[i],
+        title: variants[i].title.toLowerCase()
+      });
+    }
+
+    const match = _.findWhere(newVariants, { title: desiredSize });
+
+    if (match != null) {
       return {
         handle,
         id: match.id
@@ -519,27 +571,26 @@ async function validatePayment(session: SessionConfig, config: ShopifyConfig): P
 
 class ShopifyTask extends Task {
   id: number;
+  app: AppSettings;
   config: ShopifyConfig;
   session: ?SessionConfig = null;
   product: ?ItemVariant = null;
   taskStartTime: number;
   stopped: boolean = false;
-  timerId: number;
 
+  captchas: Array<Captcha>;
+
+  timerId: number;
   timerStart: moment;
 
   statusUpdate: Function;
 
-  constructor(id: number, config: ShopifyConfig, statusUpdateCallback: Function) {
+  constructor(id: number, config: ShopifyConfig, appSettings: AppSettings, statusUpdateCallback: Function) {
     super(id);
     this.config = config;
+    this.app = appSettings;
     console.log(this.config);
     this.statusUpdate = statusUpdateCallback;
-
-    this.product = {
-      handle: '1992-nuptse-jacket',
-      id: '54761258069'
-    };
 
     console.log('initialized');
   }
@@ -758,15 +809,15 @@ class ShopifyTask extends Task {
       session = await sendPayment(session, this.config);
 
       this.endTime(moment(), 'Sent payment details successfully.');
-      
+
       try {
         this.startTime(moment());
         this.log('Validating payment...');
         this.statusUpdate('0-Validating payment');
-  
+
         const response = await validatePayment(session, this.config);
-  
-  
+
+
         if (response) {
           const duration = this.endTime(moment(), 'Checkout successful.', true);
           this.statusUpdate(`1-Checkout successful! (${duration.milliseconds()})`);

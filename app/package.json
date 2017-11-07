@@ -7,5 +7,7 @@
   "scripts": {
     "postinstall": "npm rebuild --runtime=electron --target=1.6.6 --disturl=https://atom.io/download/atom-shell --build-from-source"
   },
-  "dependencies": {}
+  "dependencies": {
+    "react-tap-event-plugin": "^3.0.2"
+  }
 }

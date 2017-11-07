@@ -51,4 +51,4 @@ const s = new Shopify(1, {
   proxies: []
 }, a);
 
-s.start();
+//s.start();

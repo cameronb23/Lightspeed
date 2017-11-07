@@ -10,10 +10,17 @@
  *
  * @flow
  */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, protocol } from 'electron';
+
+import express from 'express';
+
 import MenuBuilder from './menu';
 
+const expressApp = express();
+
 let mainWindow = null;
+
+let server;
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -48,22 +55,45 @@ const installExtensions = async () => {
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
+  // server.close();
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
+protocol.registerStandardSchemes(['test']);
 
 app.on('ready', async () => {
   if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true') {
     await installExtensions();
   }
 
+  // TODO: fix, not working correctly
+  // expressApp.set('port', 5001);
+  // expressApp.get('/', (req, res) => {
+  //   res.sendFile(`${__dirname}/captchaHarvester.html`, () => res.end());
+  // });
+  // server = expressApp.listen(expressApp.get('port'), () => {
+  //   console.log('Captcha app is running on port 5001');
+  // });
+
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
-    height: 728
+    height: 728,
+    frame: false
   });
+
+  // protocol.registerFileProtocol('test', (request, callback) => {
+  //   const up = `${__dirname}/app.html`;
+  //   console.log(up);
+  //   callback({ path: up });
+  // }, (error) => {
+  //   if (error) console.error('Failed to register protocol');
+  // });
+  //
+  // mainWindow.loadURL(`test://${__dirname}/app.html`);
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
 

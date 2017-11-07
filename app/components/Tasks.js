@@ -1,23 +1,49 @@
 // @flow
 import React, { Component } from 'react';
-import { Table, Loader, Icon, Button } from 'semantic-ui-react';
+import { Button, Checkbox } from 'material-ui';
+import Table, { TableBody, TableCell, TableHead, TableRow } from 'material-ui/Table';
+import { CircularProgress } from 'material-ui/Progress';
+import { Check, Close } from 'material-ui-icons';
+import { withStyles } from 'material-ui/styles';
+import green from 'material-ui/colors/green';
+import red from 'material-ui/colors/red';
 import { sendStartCommand, sendStopCommand, removeTask } from '../actions/tasks';
+
+const styles = theme => ({
+  root: {
+    width: '100%',
+    marginTop: theme.spacing.unit * 3,
+    overflowX: 'auto',
+  },
+  table: {
+    minWidth: 700,
+  },
+  iconSuccess: {
+    fill: red
+  },
+  iconFail: {
+    fill: green
+  }
+});
 
 class Tasks extends Component {
   props: {
     dispatch: Function,
-    tasks: Array<Object>
+    tasks: Array<Object>,
+    classes: Object
   };
 
   state: {
-    loading: boolean
+    loading: boolean,
+    selected: Array
   };
 
   constructor(props: Object) {
     super(props);
 
     this.state = {
-      loading: false
+      loading: false,
+      selected: []
     };
   }
 
@@ -67,83 +93,98 @@ class Tasks extends Component {
     });
   }
 
+
+  // select items
+  handleSelectAll(e, items) {
+    if (items) {
+      const { tasks } = this.props;
+      this.setState({
+        selected: tasks.map(t => t.id)
+      });
+      return;
+    }
+
+    this.setState({
+      selected: []
+    });
+  }
+
   render() {
-    const { tasks } = this.props;
+    const { tasks, classes } = this.props;
     return (
       <div>
-        <Loader active={this.state.loading} />
-        <Table
-          celled
-          tableData={tasks}
-          headerRow={(
-            <Table.Row>
-              <Table.HeaderCell>ID</Table.HeaderCell>
-              <Table.HeaderCell>Type</Table.HeaderCell>
-              <Table.HeaderCell>URL</Table.HeaderCell>
-              <Table.HeaderCell>Checkout Profile</Table.HeaderCell>
-              <Table.HeaderCell width={1}>Active</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Actions</Table.HeaderCell>
-            </Table.Row>
-          )}
-          footerRow={(
-            <Table.Row>
-              <Table.HeaderCell colSpan={6}>
-                <Button floated="right" icon labelPosition="left" negative size="small" onClick={this.handleClearAll.bind(this)}>
-                  <Icon name="close" /> Clear All
-                </Button>
-                <Button size="small" positive onClick={this.handleStartAllTasks.bind(this)}>Start All</Button>
-                <Button size="small" negative onClick={this.handleStopAllTasks.bind(this)}>Stop All</Button>
-              </Table.HeaderCell>
-            </Table.Row>
-          )}
-          renderBodyRow={data => {
-            let str = data.status;
-            let status = null;
-            let statusCode = null;
+        <Table className={classes.table}>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <Checkbox
+                  onChange={this.handleSelectAll.bind(this)}
+                />
+              </TableCell>
+              <TableCell>ID</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>URL</TableCell>
+              <TableCell>Profile</TableCell>
+              <TableCell>Active</TableCell>
+              <TableCell>Status</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {tasks.map(data => {
+              console.log(data);
+              let str = data.status;
+              let status = null;
+              let statusCode = null;
 
-            if (str.startsWith('-')) {
-              str = str.substring(1);
-              statusCode = -1;
-            } else {
-              statusCode = parseInt(str.split('-')[0], 16);
-            }
+              if (str.startsWith('-')) {
+                str = str.substring(1);
+                statusCode = -1;
+              } else {
+                statusCode = parseInt(str.split('-')[0], 10);
+              }
 
-            status = str.split('-')[1];
+              status = str.split('-')[1];
 
-            console.log(`Status: ${status} | Code: ${statusCode}`);
+              console.log(`Status: ${status} | Code: ${statusCode}`);
 
-            const error = (statusCode === -1);
-            const running = (statusCode === 0);
-            const success = (statusCode === 1);
+              const error = (statusCode === -1);
+              const running = (statusCode === 0);
+              const success = (statusCode === 1);
 
-            const icon = error ? 'close' : 'checkmark';
-            const color = error ? 'red' : 'green';
-
-            return (
-              <Table.Row
-                negative={error}
-                positive={success}
-                key={data.id}
-              >
-                <Table.Cell>{data.id}</Table.Cell>
-                <Table.Cell>{data.type}</Table.Cell>
-                <Table.Cell>{data.url}</Table.Cell>
-                <Table.Cell>{data.checkout_profile.title}</Table.Cell>
-                <Table.Cell>
-                  <Loader size="tiny" indeterminate inline="centered" active={running} />
-                  { success || error ? <Icon color={color} name={icon} size="small" style={{ textAlign: 'center' }} /> : null }
-                </Table.Cell>
-                <Table.Cell>
-                  {status}
-                </Table.Cell>
-              </Table.Row>
-            );
-          }}
-        />
+              // row error success
+              return (
+                <TableRow
+                  key={data.id}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox />
+                  </TableCell>
+                  <TableCell>{data.id}</TableCell>
+                  <TableCell>{data.type}</TableCell>
+                  <TableCell>{data.url}</TableCell>
+                  <TableCell>{data.checkout_profile.title}</TableCell>
+                  <TableCell className={classes.centered}>
+                    { running && <CircularProgress size={20} /> }
+                    { success && !error && <Check className={classes.iconSuccess} /> }
+                    { error && !success && <Check className={classes.iconFail} /> }
+                  </TableCell>
+                  <TableCell>
+                    {status}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+        <Button color="primary" onClick={this.handleStartAllTasks.bind(this)}>
+          Start Tasks
+        </Button>
+        <Button color="danger" onClick={this.handleStopAllTasks.bind(this)}>
+          Stop Tasks
+        </Button>
       </div>
     );
   }
 }
 
-export default Tasks;
+export default withStyles(styles)(Tasks);

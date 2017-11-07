@@ -1,7 +1,6 @@
 import request from 'request-promise';
 import _ from 'underscore';
 import { parseString } from 'xml2js';
-import fs from 'fs';
 import promisify from 'promisify-es6';
 
 const parseXML = promisify(parseString);
@@ -138,8 +137,6 @@ export async function scanAtom(config: ShopifyConfig) {
 
       const entries = json.feed.entry;
 
-      fs.writeFileSync('./jsondat.json', JSON.stringify(entries), 'UTF-8');
-
       // scan all items
       const scanResults = entries.filter(entry => containsKeywords(entry.title[0], config.keywords));
 
@@ -156,7 +153,7 @@ export async function scanAtom(config: ShopifyConfig) {
           r['s:variant'].forEach(v => {
             variants.push({
               id: v.id[0].split('products/')[1],
-              size: v.title[0]
+              size: v.title[0].toLowerCase()
             });
           });
 
@@ -190,12 +187,3 @@ type ShopifyConfig = {
   proxies: Array<string>,
   size: string
 };
-
-scanAtom({
-  base_url: 'https://kith.com',
-  keywords: ['green', 'boot', '-tan'],
-  checkout_profile: {},
-  userAgent: 'bitch',
-  proxies: [],
-  size: '9.5'
-});

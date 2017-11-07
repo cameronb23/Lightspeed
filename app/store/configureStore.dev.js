@@ -7,7 +7,7 @@ import { routerMiddleware, routerActions } from 'react-router-redux';
 import { createLogger } from 'redux-logger';
 import rootReducer from '../reducers';
 
-import { updateProfileStoreSaga } from '../redux/sagas';
+import { updateProfileStoreSaga, updateSettingsStoreSaga } from '../redux/sagas';
 
 
 const history = createHashHistory();
@@ -65,6 +65,7 @@ const configureStore = (initialState?: Object) => {
   }
 
   sagaMiddleware.run(updateProfileStoreSaga);
+  sagaMiddleware.run(updateSettingsStoreSaga);
 
   return store;
 };

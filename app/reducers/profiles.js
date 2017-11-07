@@ -104,7 +104,7 @@ export default function profiles(state: profileStateType = [], action: actionTyp
         return state;
       }
 
-      return Object.assign({}, action.data);
+      return action.data;
     }
     default:
       return state;

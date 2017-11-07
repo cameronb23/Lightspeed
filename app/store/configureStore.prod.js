@@ -7,7 +7,7 @@ import { createBrowserHistory } from 'history';
 import { routerMiddleware } from 'react-router-redux';
 import rootReducer from '../reducers';
 
-import { updateProfileStoreSaga } from '../redux/sagas';
+import { updateProfileStoreSaga, updateSettingsStoreSaga } from '../redux/sagas';
 
 const history = createBrowserHistory();
 const router = routerMiddleware(history);
@@ -19,6 +19,7 @@ function configureStore(initialState?: Object) {
   const store = createStore(rootReducer, initialState, enhancer);
 
   sagaMiddleware.run(updateProfileStoreSaga);
+  sagaMiddleware.run(updateSettingsStoreSaga);
 
   return store;
 }

@@ -1,9 +1,9 @@
 import { connect } from 'react-redux';
-import Profiles from '../components/profile/Profiles';
+import Settings from '../components/settings/Settings';
 
 function mapStateToProps(state) {
   return {
-    profiles: state.profiles
+    app: state.app
   };
 }
 
@@ -13,4 +13,4 @@ function mapDispatchToProps(dispatch) {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(Profiles);
+export default connect(mapStateToProps, mapDispatchToProps)(Settings);

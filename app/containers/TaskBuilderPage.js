@@ -1,9 +1,8 @@
 import { connect } from 'react-redux';
-import TaskBuilder from '../components/TaskBuilder';
+import TaskBuilder from '../components/taskbuilder/TaskBuilder';
 
 function mapStateToProps(state) {
   return {
-    tasks: state.tasks,
     profiles: state.profiles
   };
 }

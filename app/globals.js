@@ -21,3 +21,22 @@ export type CheckoutProfile = {
     expYear: number
   }
 };
+
+export type AppSettings = {
+  theme: Object,
+  captcha_keys: {
+    '2captcha': string,
+    'anticaptcha': string,
+    'captchasolutions': string,
+    'deathbycaptcha': string
+  }
+};
+
+export type Captcha = {
+  token: string,
+  expiry: Date,
+  source: string
+};
+
+
+// Captchatronix, Image typerz, captcha destroyer
