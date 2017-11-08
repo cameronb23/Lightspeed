@@ -597,7 +597,15 @@ class ShopifyTask extends Task {
 
   async start() {
     this.log('Started task.');
-    this.statusUpdate('0-Starting');
+    try {
+      this.statusUpdate('0-Starting');
+    } catch (e) {
+      console.log(e);
+    }
+
+    // TODO: initialize websocket
+
+
     this.taskStartTime = moment().milliseconds();
     this.scan();
   }
@@ -680,7 +688,7 @@ class ShopifyTask extends Task {
       this.endTime(moment(), 'Added to cart.');
 
       if (this.session.current_url.includes('throttle')) {
-        // BEING THROTTLED
+        // TODO: BEING THROTTLED
       }
 
       this.sendContactInformation();
@@ -688,6 +696,10 @@ class ShopifyTask extends Task {
       this.log(`Failed to add to cart: ${e}`);
       return this.atc();
     }
+  }
+
+  async getCaptcha() {
+    // TODO: get captcha from websocket
   }
 
   async sendContactInformation() {
@@ -713,7 +725,11 @@ class ShopifyTask extends Task {
       this.startTime(moment());
       this.log('Fetching captcha response...');
       this.statusUpdate('0-Fetching captcha response');
-      captchaResponse = await solve(session.sitekey, this.config.base_url);
+
+
+      captchaResponse = await this.getCaptcha(this.config.base_url, session.sitekey);
+
+      // captchaResponse = await solve(session.sitekey, this.config.base_url);
       this.endTime(moment(), 'Retrieved captcha response');
     }
 

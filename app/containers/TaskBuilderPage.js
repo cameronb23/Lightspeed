@@ -1,4 +1,5 @@
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom'
 import TaskBuilder from '../components/taskbuilder/TaskBuilder';
 
 function mapStateToProps(state) {
@@ -13,4 +14,4 @@ function mapDispatchToProps(dispatch) {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(TaskBuilder);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(TaskBuilder));

@@ -20,6 +20,7 @@ export async function startTask(taskData: TaskSettings, appSettings: AppSettings
           userAgent: taskData.data.userAgent,
           size: taskData.data.size
         },
+        appSettings,
         updateStatusCallback
       );
 

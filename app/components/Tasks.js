@@ -179,7 +179,7 @@ class Tasks extends Component {
         <Button color="primary" onClick={this.handleStartAllTasks.bind(this)}>
           Start Tasks
         </Button>
-        <Button color="danger" onClick={this.handleStopAllTasks.bind(this)}>
+        <Button color="accent" onClick={this.handleStopAllTasks.bind(this)}>
           Stop Tasks
         </Button>
       </div>

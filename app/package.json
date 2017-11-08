@@ -1,7 +1,8 @@
 {
   "name": "Lightspeed",
   "productName": "Lightspeed",
-  "version": "1.0.0",
+  "version": "0.0.3",
+  "author": "Cameron",
   "description": "Electron-based sneakerbot",
   "main": "./main.prod.js",
   "scripts": {

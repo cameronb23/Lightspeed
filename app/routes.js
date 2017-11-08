@@ -13,11 +13,11 @@ export default () => (
   <App>
     <Switch>
       <Route exact path="/" component={HomePage} />
-      <Route path="/captcha" component={CaptchaPage} />
-      <Route path="/tasks" component={TasksPage} />
-      <Route path="/taskbuilder" component={TaskBuilderPage} />
-      <Route path="/profiles" component={ProfilesPage} />
-      <Route path="/settings" component={SettingsPage} />
+      <Route exact path="/captcha" component={CaptchaPage} />
+      <Route exact path="/tasks" component={TasksPage} />
+      <Route exact path="/taskbuilder" component={TaskBuilderPage} />
+      <Route exact path="/profiles" component={ProfilesPage} />
+      <Route exact path="/settings" component={SettingsPage} />
     </Switch>
   </App>
 );

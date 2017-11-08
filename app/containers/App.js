@@ -3,6 +3,7 @@
 import React, { Component } from 'react';
 import type { Children } from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom'
 
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import createMuiTheme from 'material-ui/styles/createMuiTheme';
@@ -101,4 +102,4 @@ function mapDispatchToProps(dispatch) {
 
 const AppStyled = withStyles(styles, { withTheme: true })(App);
 
-export default connect(mapStateToProps, mapDispatchToProps)(AppStyled);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AppStyled));
