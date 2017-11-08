@@ -6,6 +6,8 @@ import chalk from 'chalk';
 import moment from 'moment';
 import _ from 'underscore';
 import { format } from 'libphonenumber-js';
+
+import { fetchCaptcha } from '../task-manager';
 import { scanAtom } from './shopify_monitor';
 import { solve } from '../../utils/captcha_utils';
 import Task from '../task';
@@ -56,6 +58,11 @@ function CheckoutException(errorMessage: string) {
   (this.prototype: any).toString = () => `Checkout Exception(${this.message})`; // eslint-disable-line flowtype/no-weak-types
 }
 
+function passesDot(size, str) {
+  if (!str || str === '') return false;
+  return str.toLowerCase() === size || str.toLowerCase() === size.replace('.', ',');
+}
+
 async function findVariant(config: ShopifyConfig, handle: string) {
   const opts = {
     url: `${config.base_url}/products/${handle}.json`,
@@ -77,18 +84,16 @@ async function findVariant(config: ShopifyConfig, handle: string) {
     // shoe size
     const desiredSize = config.size.replace('_S', '');
 
-    // filter all non-numbers and non-decimals out
-    const newVariants = [];
-
-    for (let i = 0; i < variants.length; i += 1) {
-      newVariants.push({
-        ...variants[i],
-        title: variants[i].title.toLowerCase().replace(/[^\d.]/g, '')
-      });
-    }
-
     const matchDot = _.findWhere(variants, { title: desiredSize });
     const matchComma = _.findWhere(variants, { title: desiredSize.replace('.', ',') });
+    let matchOpts = null;
+
+    matchOpts = variants.filter(v => passesDot(desiredSize, v.option1) ||
+              passesDot(desiredSize, v.option2) ||
+              passesDot(desiredSize, v.option3));
+
+    console.log(matchOpts);
+
 
     let match = null;
 
@@ -96,6 +101,10 @@ async function findVariant(config: ShopifyConfig, handle: string) {
       match = matchComma;
     } else if (matchDot !== undefined) {
       match = matchDot;
+    }
+
+    if (matchOpts != null) {
+      match = matchOpts[0];
     }
 
     if (match !== null) {
@@ -108,18 +117,19 @@ async function findVariant(config: ShopifyConfig, handle: string) {
     // apparel / clothing size
     const desiredSize = config.size.replace('_A', '').toLowerCase();
 
-    const newVariants = [];
+    const match = _.findWhere(variants, { title: desiredSize });
+    let matchOpts = null;
 
-    for (let i = 0; i < variants.length; i += 1) {
-      newVariants.push({
-        ...variants[i],
-        title: variants[i].title.toLowerCase()
-      });
-    }
+    matchOpts = variants.filter(v => passesDot(desiredSize, v.option1) ||
+              passesDot(desiredSize, v.option2) ||
+              passesDot(desiredSize, v.option3));
 
-    const match = _.findWhere(newVariants, { title: desiredSize });
-
-    if (match != null) {
+    if (matchOpts != null) {
+      return {
+        handle,
+        id: matchOpts[0].id
+      };
+    } else if (match != null) {
       return {
         handle,
         id: match.id
@@ -129,18 +139,19 @@ async function findVariant(config: ShopifyConfig, handle: string) {
     // miscellaneous size
     const desiredSize = config.size.replace('_MISC', '').toLowerCase();
 
-    const newVariants = [];
+    const match = _.findWhere(variants, { title: desiredSize });
+    let matchOpts = null;
 
-    for (let i = 0; i < variants.length; i += 1) {
-      newVariants.push({
-        ...variants[i],
-        title: variants[i].title.toLowerCase()
-      });
-    }
+    matchOpts = variants.filter(v => passesDot(desiredSize, v.option1) ||
+              passesDot(desiredSize, v.option2) ||
+              passesDot(desiredSize, v.option3));
 
-    const match = _.findWhere(newVariants, { title: desiredSize });
-
-    if (match != null) {
+    if (matchOpts != null) {
+      return {
+        handle,
+        id: matchOpts[0].id
+      };
+    } else if (match != null) {
       return {
         handle,
         id: match.id
@@ -585,11 +596,15 @@ class ShopifyTask extends Task {
 
   statusUpdate: Function;
 
-  constructor(id: number, config: ShopifyConfig, appSettings: AppSettings, statusUpdateCallback: Function) {
+  constructor(
+    id: number,
+    config: ShopifyConfig,
+    appSettings: AppSettings,
+    statusUpdateCallback: Function
+  ) {
     super(id);
     this.config = config;
     this.app = appSettings;
-    console.log(this.config);
     this.statusUpdate = statusUpdateCallback;
 
     console.log('initialized');
@@ -698,8 +713,10 @@ class ShopifyTask extends Task {
     }
   }
 
-  async getCaptcha() {
+  async getCaptcha(url: string, sitekey: string) { // eslint-disable-line no-unused-vars
     // TODO: get captcha from websocket
+    const captcha = await fetchCaptcha();
+    return captcha;
   }
 
   async sendContactInformation() {

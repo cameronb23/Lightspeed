@@ -148,20 +148,10 @@ export async function scanAtom(config: ShopifyConfig) {
 
       try {
         scanResults.forEach(r => {
-          const variants = [];
-
-          r['s:variant'].forEach(v => {
-            variants.push({
-              id: v.id[0].split('products/')[1],
-              size: v.title[0].toLowerCase()
-            });
-          });
-
           formatted.push({
             title: r.title[0],
             handle: r.link[0].$.href.split('products/')[1],
             id: r.id[0].split('products/')[1],
-            variants
           });
         });
       } catch (e) {

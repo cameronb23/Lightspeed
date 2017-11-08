@@ -45,10 +45,11 @@ const a = (b: string) => {
 
 const s = new Shopify(1, {
   base_url: 'https://offthehook.ca',
-  keywords: ['sd', 'sa'],
+  keywords: ['slip-on', '59'],
   checkout_profile: newCp,
   userAgent: 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
-  proxies: []
-}, a);
+  proxies: [],
+  size: '5_S'
+}, {}, a);
 
-//s.start();
+// s.start();
