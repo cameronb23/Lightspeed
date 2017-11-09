@@ -33,7 +33,8 @@ type SessionConfig = {
   sitekey: string,
   shipping_methods: ?Array<ShippingMethod>,
   payment_vals: ?PaymentValues,
-  oos: boolean
+  oos: boolean,
+  proxy: ?string
 };
 
 type ShippingMethod = {
@@ -56,7 +57,13 @@ function CheckoutException(errorMessage: string) {
   (this.prototype: any).toString = () => `Checkout Exception(${this.message})`; // eslint-disable-line flowtype/no-weak-types
 }
 
+function getProxy(proxies: Array<string>) {
+  if (proxies.length === 0) return null;
+  return proxies[Math.floor(Math.random() * proxies.length)];
+}
+
 async function findVariant(config: ShopifyConfig, handle: string) {
+  const proxy = getProxy(config.proxies);
   const opts = {
     url: `${config.base_url}/products/${handle}.json`,
     method: 'GET',
@@ -68,6 +75,10 @@ async function findVariant(config: ShopifyConfig, handle: string) {
     },
     json: true
   };
+
+  if (proxy != null) {
+    opts.proxy = proxy;
+  }
 
   const json = await request(opts);
 
@@ -155,6 +166,7 @@ function addToCart(
 ): Promise<Object> { // eslint-disable-line flowtype/no-weak-types
   return new Promise(async (resolve, reject) => {
     const cookies = request.jar();
+    const proxy = getProxy(config.proxies);
     const opts = {
       url: `${config.base_url}/cart/${item.id}:1`,
       method: 'GET',
@@ -170,6 +182,10 @@ function addToCart(
       followAllRedirects: true,
       jar: cookies
     };
+
+    if (proxy != null) {
+      opts.proxy = proxy;
+    }
 
     try {
       const response = await request(opts);
@@ -211,7 +227,8 @@ function addToCart(
         currentStep: 'contact_information',
         shipping_methods: null,
         payment_vals: null,
-        oos
+        oos,
+        proxy: proxy != null ? proxy : null
       });
     } catch (e) {
       return reject(e);
@@ -290,6 +307,10 @@ function sendContactInfo(
       form
     };
 
+    if (session.proxy != null) {
+      opts.proxy = session.proxy;
+    }
+
     try {
       const response = await request(opts);
 
@@ -333,6 +354,10 @@ async function retrieveShippingRates(session: SessionConfig, config: ShopifyConf
     jar: session.cookieJar,
     resolveWithFullResponse: true,
   };
+
+  if (session.proxy != null) {
+    opts.proxy = session.proxy;
+  }
 
   try {
     const response = await request(opts);
@@ -407,6 +432,10 @@ function sendShippingMethod(
       }
     };
 
+    if (session.proxy != null) {
+      opts.proxy = session.proxy;
+    }
+
     try {
       const response = await request(opts);
 
@@ -474,6 +503,10 @@ function sendPayment(session: SessionConfig, config: ShopifyConfig): Promise<*> 
       body: cardData,
       json: true
     };
+
+    if (session.proxy != null) {
+      opts.proxy = session.proxy;
+    }
 
     try {
       const json = await request(opts);
@@ -551,6 +584,10 @@ async function validatePayment(session: SessionConfig, config: ShopifyConfig): P
     },
   };
 
+  if (session.proxy != null) {
+    opts.proxy = session.proxy;
+  }
+
   try {
     const response = await request(opts);
     const url = response.request.uri.href;
@@ -585,7 +622,12 @@ class ShopifyTask extends Task {
 
   statusUpdate: Function;
 
-  constructor(id: number, config: ShopifyConfig, appSettings: AppSettings, statusUpdateCallback: Function) {
+  constructor(
+    id: number,
+    config: ShopifyConfig,
+    appSettings: AppSettings,
+    statusUpdateCallback: Function
+  ) {
     super(id);
     this.config = config;
     this.app = appSettings;

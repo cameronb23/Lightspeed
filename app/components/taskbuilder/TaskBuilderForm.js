@@ -44,8 +44,8 @@ const styles = theme => ({
     paddingBottom: 16,
     marginTop: theme.spacing.unit * 3,
   }),
-  tallPopover: {
-    maxHeight: 150
+  profileSelect: {
+    width: 150
   }
 });
 
@@ -90,7 +90,7 @@ const TaskForm = (props: propTypes) => {
           </Grid>
           <Grid item xs>
             <InputLabel htmlFor="tksz">Select desired size</InputLabel>
-            <Field id="tksz" name="size" fullWidth component={Select} label="Select desired size" validate={required} className={classes.tallPopover}>
+            <Field id="tksz" name="size" fullWidth component={Select} label="Select desired size" validate={required}>
               {taskSizeOptions.map(type => (
                 <MenuItem key={type.key} value={type.value}>
                   {type.text}
@@ -122,8 +122,11 @@ const TaskForm = (props: propTypes) => {
         />
 
         <br />
+        <br />
 
-        <Field name="profile" component={Select} label="Checkout profile" validate={required} className={classes.tallPopover}>
+        <InputLabel htmlFor="tkpf">Select checkout profile</InputLabel>
+        <br />
+        <Field id="tkpf" name="profile" component={Select} label="Checkout profile" validate={required} className={classes.profileSelect}>
           {opts.map(p => (
             <MenuItem key={p.key} value={p.value}>
               {p.text}

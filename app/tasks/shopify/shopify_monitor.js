@@ -20,6 +20,11 @@ const JsonAvailability: Array<Object> = [];
 // so basically if I try to add/remove from the array a value that doesn't match Object,
 // it will tell me, so i can reduce errors in my code at runtime
 
+function getProxy(proxies: Array<string>) {
+  if (proxies.length === 0) return null;
+  return proxies[Math.floor(Math.random() * proxies.length)];
+}
+
 
 async function determineJsonAvailability(config: ShopifyConfig): Promise<boolean> {
   const cached = _.findWhere(JsonAvailability, { siteUrl: config.base_url });
@@ -110,6 +115,7 @@ function containsKeywords(test: string, keywords: Array<string>) {
 
 export async function scanAtom(config: ShopifyConfig) {
   const url = `${config.base_url}/collections/all.atom`;
+  const proxy = getProxy(config.proxies);
   const opts = {
     url,
     method: 'GET',
@@ -122,6 +128,10 @@ export async function scanAtom(config: ShopifyConfig) {
     },
     resolveWithFullResponse: true
   };
+
+  if (proxy != null) {
+    opts.proxy = proxy;
+  }
 
   try {
     const response = await request(opts);

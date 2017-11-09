@@ -11,6 +11,7 @@ import Drawer from 'material-ui/Drawer';
 import Toolbar from 'material-ui/Toolbar';
 import Typography from 'material-ui/Typography';
 import List, { ListItem, ListItemIcon, ListItemText } from 'material-ui/List';
+import { withStyles } from 'material-ui/styles';
 import { Home, ModeEdit, Dashboard, Payment, Settings, Palette, Close, CheckCircle } from 'material-ui-icons';
 
 type propTypes = {
@@ -19,6 +20,20 @@ type propTypes = {
     palette: Object
   }
 }
+
+const styles = () => ({
+  toolbar: {
+    '-webkit-app-region': 'drag'
+  },
+  iconButton: {
+    '-webkit-app-region': 'no-drag'
+  },
+  rightButton: {
+    marginLeft: 'auto',
+    float: 'right',
+    '-webkit-app-region': 'no-drag'
+  }
+});
 
 const SideList = (props: propTypes) => (
   <div style={{ width: 250 }}>
@@ -79,6 +94,7 @@ class AppDrawer extends Component {
 
   props: {
     theme: Object,
+    classes: Object,
     handleThemeSwitch: Function
   };
 
@@ -94,25 +110,32 @@ class AppDrawer extends Component {
     };
   }
 
-  toggleVisibility = () => this.setState({ sidebarVisible: !this.state.sidebarVisible })
+  toggleVisibility = () => this.setState({ sidebarVisible: !this.state.sidebarVisible });
+
+  minimizeWindow = () => remote.getCurrentWindow().minimize();
 
   closeWindow = () => remote.getCurrentWindow().close();
 
   // TODO: replace with singular component
   render() {
+    const { classes } = this.props;
+
     return (
       <div>
         <AppBar
           title="Lightspeed"
         >
-          <Toolbar>
-            <IconButton color="contrast" aria-label="Menu" onClick={this.toggleVisibility.bind(this)}>
+          <Toolbar className={classes.toolbar}>
+            <IconButton color="contrast" aria-label="Menu" className={classes.iconButton} onClick={this.toggleVisibility.bind(this)}>
               <MenuIcon />
             </IconButton>
             <Typography type="title" color="inherit">
               Lightspeed
             </Typography>
-            <IconButton onClick={this.closeWindow.bind(this)} color="contrast" aria-label="Menu">
+            <IconButton className={classes.rightButton} onClick={this.minimizeWindow.bind(this)} color="contrast" aria-label="Close">
+              <Close />
+            </IconButton>
+            <IconButton className={classes.rightButton} onClick={this.closeWindow.bind(this)} color="contrast" aria-label="Close">
               <Close />
             </IconButton>
           </Toolbar>
@@ -135,4 +158,4 @@ class AppDrawer extends Component {
   }
 }
 
-export default AppDrawer;
+export default withStyles(styles)(AppDrawer);
