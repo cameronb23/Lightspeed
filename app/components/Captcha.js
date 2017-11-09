@@ -30,6 +30,9 @@ moment.updateLocale('en', {
 const styles = () => ({
   paper: {
     padding: 25
+  },
+  web: {
+    height: '100%'
   }
 });
 
@@ -59,25 +62,6 @@ class CaptchaComponent extends Component {
     this.state = {
       ready: false
     };
-  }
-
-  componentDidMount() {
-    this.startHarvesting();
-  }
-
-  startHarvesting() {
-    if (!this.webView.isReady()) {
-      return setTimeout(() => {
-        this.startHarvesting();
-      }, 500);
-    }
-
-    this.webView.getWebContents().session.setProxy({
-      proxyRules: 'http://127.0.0.1:5001'
-    }, () => {
-      // this.webView.loadURL('https://google.com');
-      console.log('Loaded proxy');
-    });
   }
 
   verifyToken(response: string) {
@@ -141,7 +125,7 @@ class CaptchaComponent extends Component {
               <Typography type="headline">Captcha solver</Typography>
               <Button color="primary" onClick={this.resetCaptcha.bind(this)}>Manual Reset</Button>
               {!this.state.ready && <CircularProgress />}
-              <WebView src="checkout.shopify.com" ref={(view) => { this.webView = view; }} />
+              <WebView className={classes.web} src={'http://localhost:9965/captcha?sitekey=6LeoeSkTAAAAAA9rkZs5oS82l69OEYjKRZAiKdaF&url=packershoes.com'} ref={(view) => { this.webView = view; }} />
               {/* <Recaptcha
                 ref={e => { this.recapInstance = e; }}
                 verifyCallback={this.verifyToken.bind(this)}

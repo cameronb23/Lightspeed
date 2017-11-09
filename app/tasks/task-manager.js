@@ -1,10 +1,16 @@
 /* eslint-disable import/prefer-default-export */
+import uuid from 'uuid/v4';
 import _ from 'underscore';
+import io from 'socket.io-client';
 import { Shopify } from './shopify/index';
 import type { TaskSettings } from '../actions/tasks';
 import type { AppSettings } from '../globals';
 
 const tasks = [];
+const captchas = [];
+let socket = null;
+let addCaptchaCallback = null;
+let expireCaptchaCallback = null;
 
 
 function formatProxiesShopify(proxyList: Array<string>): Array<string> {
@@ -26,12 +32,63 @@ function formatProxiesShopify(proxyList: Array<string>): Array<string> {
   return set;
 }
 
+export function configure(addCaptcha: Function, expireCaptcha: Function) {
+  this.addCaptchaCallback = addCaptcha;
+  this.expireCaptchaCallback = expireCaptcha;
+}
+
+export function startSocket(cb: ?Function) {
+  console.log('Starting socket connection');
+  socket = io('http://localhost:8890');
+
+  socket.on('connect', () => cb('Socket connected'));
+  socket.on('disconnect', () => startSocket());
+  socket.on('captcha', (data) => {
+    // received captcha
+    const id = uuid();
+    const captcha = Object.assign({}, data, {
+      id
+    });
+
+    cb(captcha);
+    captchas.push(captcha);
+    // addCaptchaCallback(captcha);
+  });
+}
+
+function closeSocket() {
+  console.log('Closing socket connection');
+}
+
+function useCaptcha(c: Object) {
+  // expireCaptchaCallback(c.id);
+  this.captchas.splice(this.captchas.indexOf(c));
+  return c;
+}
+
+export async function fetchCaptcha() {
+  if (captchas.length > 0) {
+    const captcha = captchas[0];
+    return useCaptcha(captcha);
+  }
+
+  const i = setInterval(() => {
+    if (captchas.length > 0) {
+      const captcha = captchas[0];
+      clearInterval(i);
+      return useCaptcha(captcha);
+    }
+  }, 250);
+}
+
 export async function startTask(
   taskData: TaskSettings,
   appSettings: AppSettings,
   updateStatusCallback: Function
 ): boolean {
-  console.log(appSettings);
+  if (tasks.length < 1) {
+    startSocket();
+  }
   switch (taskData.type) {
     case 'SHOPIFY': {
       const proxies = formatProxiesShopify(taskData.proxies.split('\n'));
@@ -76,6 +133,9 @@ export async function stopTask(taskId: string): boolean {
 
   try {
     await task.stop();
+    if (tasks.length === 0) {
+      closeSocket();
+    }
 
     return true;
   } catch (e) {

@@ -18,6 +18,8 @@ import { setProfiles } from '../actions/profiles';
 
 import { toggleTheme } from '../actions/app';
 
+import { startSocket } from '../tasks/task-manager';
+
 const styles = theme => ({
   root: {
     flex: 1,
@@ -42,6 +44,9 @@ class App extends Component {
     console.log('Loading profiles...');
 
     try {
+      startSocket((d) => console.log(d));
+
+
       const app = await loadSettings();
       const profiles = await loadProfiles();
 
