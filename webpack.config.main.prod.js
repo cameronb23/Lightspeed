@@ -8,6 +8,7 @@ import BabiliPlugin from 'babili-webpack-plugin';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import baseConfig from './webpack.config.base';
 import CheckNodeEnv from './internals/scripts/CheckNodeEnv';
+import JscramblerWebpack from 'jscrambler-webpack-plugin';
 
 CheckNodeEnv('production');
 
@@ -48,6 +49,12 @@ export default merge.smart(baseConfig, {
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
       'process.env.DEBUG_PROD': JSON.stringify(process.env.DEBUG_PROD || 'false')
+    }),
+
+    new JscramblerWebpack({
+      enable: true,
+      params: [],
+      applicationTypes: {}
     })
   ],
 

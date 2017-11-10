@@ -147,6 +147,8 @@
     "html-webpack-plugin": "^2.29.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^20.0.4",
+    "jscrambler-loader": "^2.0.2",
+    "jscrambler-webpack-plugin": "^1.3.3",
     "jsdom": "^11.0.0",
     "minimist": "^1.2.0",
     "node-sass": "^4.5.3",
@@ -166,6 +168,7 @@
     "webpack-bundle-analyzer": "^2.8.2",
     "webpack-dev-server": "^2.5.0",
     "webpack-merge": "^4.1.0",
+    "webpack-obfuscator": "^0.12.1",
     "xml2js": "^0.4.19"
   },
   "dependencies": {
