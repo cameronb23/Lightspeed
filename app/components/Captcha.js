@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import moment from 'moment';
 
 import WebView from 'react-electron-web-view';
-import Recaptcha from 'react-recaptcha';
 
 import { List, ListItem, ListItemText } from 'material-ui';
 import { Button, Grid, Paper, Typography, Avatar, CircularProgress } from 'material-ui';
@@ -15,7 +14,7 @@ import { withStyles } from 'material-ui/styles';
 // local - bot solver
 import { Web, SpeakerPhone, Place } from 'material-ui-icons';
 
-import type { Captcha } from '../reducers/captchas';
+import type { Captcha } from '../globals';
 
 moment.updateLocale('en', {
   relativeTime: {
@@ -64,21 +63,6 @@ class CaptchaComponent extends Component {
     };
   }
 
-  verifyToken(response: string) {
-    console.log(`Received token: ${response}`);
-  }
-
-  resetCaptcha() {
-    this.recapInstance.reset();
-  }
-
-  callback() {
-    // this.setState({
-    //   ready: true
-    // });
-    console.log('done');
-  }
-
 
   render() {
     const { classes } = this.props;
@@ -102,9 +86,9 @@ class CaptchaComponent extends Component {
     return (
       <div>
         <Grid container spacing={24}>
-          <Grid item xs>
+          {/* <Grid item xs>
             <Paper className={classes.paper}>
-              <Typography type="headline">Live Captchas</Typography>
+              <Typography type="headline">Live Captchas (Placeholder)</Typography>
               <List>
                 {captchas.map(c => (
                   <ListItem key={c.token}>
@@ -119,7 +103,7 @@ class CaptchaComponent extends Component {
                 ))}
               </List>
             </Paper>
-          </Grid>
+          </Grid> */}
           <Grid item xs>
             <Paper className={classes.paper}>
               <Typography type="headline">Captcha solver</Typography>

@@ -21,11 +21,10 @@ import bodyParser from 'body-parser';
 
 import MenuBuilder from './menu';
 
-// Start the server at port 8080
+// Start the HTTP server to load Socket.io on
 const server = http.createServer((req, res) => {
-    // Send HTML headers and message
   res.writeHead(200, { 'Content-Type': 'text/html' });
-  res.end('<h1>Hello Socket Lover!</h1>');
+  res.end('<h1>Lightspeed Update Socket</h1>');
 });
 
 server.listen(8890);
@@ -45,7 +44,6 @@ if (process.env.NODE_ENV === 'production') {
 
 if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true') {
   require('electron-debug')();
-  const path = require('path');
   const p = path.join(__dirname, '..', 'app', 'node_modules');
   require('module').globalPaths.push(p);
 }
@@ -69,11 +67,10 @@ const installExtensions = async () => {
  */
 
 app.on('window-all-closed', () => {
+  expressServer.close();
+
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
-  // server.close();
-
-  expressServer.close();
 
   if (process.platform !== 'darwin') {
     app.quit();
@@ -118,31 +115,12 @@ app.on('ready', async () => {
     console.log('Captcha server listening on port 9965');
   });
 
-  // TODO: fix, not working correctly
-  // expressApp.set('port', 5001);
-  // expressApp.get('/', (req, res) => {
-  //   res.sendFile(`${__dirname}/captchaHarvester.html`, () => res.end());
-  // });
-  // server = expressApp.listen(expressApp.get('port'), () => {
-  //   console.log('Captcha app is running on port 5001');
-  // });
-
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
     height: 728,
     frame: false
   });
-
-  // protocol.registerFileProtocol('test', (request, callback) => {
-  //   const up = `${__dirname}/app.html`;
-  //   console.log(up);
-  //   callback({ path: up });
-  // }, (error) => {
-  //   if (error) console.error('Failed to register protocol');
-  // });
-  //
-  // mainWindow.loadURL(`test://${__dirname}/app.html`);
 
   mainWindow.loadURL(`file://${__dirname}/app.html`);
 

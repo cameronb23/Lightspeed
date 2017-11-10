@@ -1,4 +1,4 @@
-// eslint-disable flowtype/no-weak-types: 1
+// @flow weak
 import _ from 'underscore';
 import React from 'react';
 import { reduxForm, Field, submit } from 'redux-form';
@@ -66,6 +66,8 @@ class ProfileForm extends React.Component {
         }
       });
       // this.props.initialize(this.props.currentProfile);
+    } else {
+      this.props.initialize({});
     }
   }
 
