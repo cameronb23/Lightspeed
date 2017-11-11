@@ -60,7 +60,7 @@ function CheckoutException(errorMessage: string) {
 }
 
 function getProxy(proxies: Array<string>) {
-  if (proxies.length === 0) return null;
+  if (proxies == null || proxies.length === 0) return null;
   return proxies[Math.floor(Math.random() * proxies.length)];
 }
 
@@ -299,6 +299,7 @@ function sendContactInfo(
     if (recaptchaResponse != null) {
       /* $FlowIssue - Optional param */
       form['g-recaptcha-response'] = recaptchaResponse;
+      form.captcha_submission = recaptchaResponse;
     }
 
     const opts = {
@@ -347,8 +348,8 @@ function sendContactInfo(
   });
 }
 
-/* $FlowFixMe - Line 221 is circular, fix */
-async function retrieveShippingRates(session: SessionConfig, config: ShopifyConfig): SessionConfig {
+/* $FlowFixMe - Line 379 is circular, fix */
+async function retrieveShippingRates(session: SessionConfig, config: ShopifyConfig, inst: Object): SessionConfig {
   const baseUrl = session.checkout_url.split('?')[0];
   const url = `${baseUrl}/shipping_rates?step=shipping_method`;
   const opts = {
@@ -363,7 +364,7 @@ async function retrieveShippingRates(session: SessionConfig, config: ShopifyConf
       'X-Requested-With': 'XMLHttpRequest'
     },
     jar: session.cookieJar,
-    resolveWithFullResponse: true,
+    resolveWithFullResponse: true
   };
 
   if (session.proxy != null) {
@@ -374,7 +375,12 @@ async function retrieveShippingRates(session: SessionConfig, config: ShopifyConf
     const response = await request(opts);
     if (response.statusCode !== 200) {
       // TODO: fix
-      return retrieveShippingRates(session, config);
+      console.log(response.statusCode);
+      return setTimeout(() => {
+        if (!inst.stopped) {
+          return retrieveShippingRates(session, config);
+        }
+      }, 500);
     }
 
     const newUrl = response.request.uri.href;
@@ -563,6 +569,7 @@ async function validatePayment(session: SessionConfig, config: ShopifyConfig): P
       Referer: `${session.checkout_url}?step=payment_method&previous_step=shipping_method`,
       'Accept-Language': 'en-US,en;q=0.8'
     },
+    simple: false,
     resolveWithFullResponse: true,
     followAllRedirects: true,
     jar: session.cookieJar,
@@ -743,20 +750,19 @@ class ShopifyTask extends Task {
         // TODO: BEING THROTTLED
       }
 
-      this.sendContactInformation();
+      this.probeContactInformation();
     } catch (e) {
       this.log(`Failed to add to cart: ${e}`);
       return this.atc();
     }
   }
 
-  async getCaptcha(url: string, sitekey: string) { // eslint-disable-line no-unused-vars
+  getCaptcha(url: string, sitekey: string) { // eslint-disable-line no-unused-vars
     // TODO: get captcha from websocket
-    const captcha = await fetchCaptcha();
-    return captcha;
+    return fetchCaptcha();
   }
 
-  async sendContactInformation() {
+  probeContactInformation() {
     if (this.stopped) {
       return;
     }
@@ -775,23 +781,50 @@ class ShopifyTask extends Task {
 
     let captchaResponse;
 
-    if (session.sitekey != null) {
-      this.startTime(moment());
-      this.log('Fetching captcha response...');
-      this.statusUpdate('0-Fetching captcha response');
+    if (session.sitekey == null) {
+      return this.sendContactInformation(null);
+    }
+
+    this.startTime(moment());
+    this.log('Fetching captcha response...');
+    this.statusUpdate('0-Fetching captcha response');
 
 
-      captchaResponse = await this.getCaptcha(this.config.base_url, session.sitekey);
+    fetchCaptcha((res) => {
+      console.log(res);
+
+      if (!res) {
+        return this.probeContactInformation();
+      }
 
       // captchaResponse = await solve(session.sitekey, this.config.base_url);
       this.endTime(moment(), 'Retrieved captcha response');
+      this.sendContactInformation(res);
+    });
+  }
+
+  async sendContactInformation(captchaResponse: ?string) {
+    if (this.stopped) {
+      return;
+    }
+
+    const session = this.session;
+    if (session == null) {
+      this.log('Unable to send info! No session!');
+      return;
+    }
+
+    if (session.oos) {
+      this.stop();
+      this.statusUpdate('-1-Out of Stock');
+      return;
     }
 
     try {
       this.startTime(moment());
       this.log('Sending contact information.');
       this.statusUpdate('0-Sending contact information');
-      this.session = await sendContactInfo(this.config, session, captchaResponse);
+      this.session = await sendContactInfo(this.config, this.session, captchaResponse);
 
       this.endTime(moment(), 'Sent contact information successfully');
 
@@ -826,7 +859,7 @@ class ShopifyTask extends Task {
       this.startTime(moment());
       this.log('Retrieving and selecting a shipping option.');
       this.statusUpdate('0-Selecting shipping option');
-      const shippingSession = await retrieveShippingRates(session, this.config);
+      const shippingSession = await retrieveShippingRates(session, this.config, this);
 
       let method = null;
       const methods = shippingSession.shipping_methods;
@@ -894,6 +927,7 @@ class ShopifyTask extends Task {
         }
       } catch (e) {
         this.stop();
+        console.log(e);
         this.endTime(moment(), 'Checkout failed.', true);
         this.statusUpdate(`-1-${e.errorMessage}`);
       }

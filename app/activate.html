@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Activate</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.3.0/milligram.min.css">
+  </head>
+  <style>
+    :root {
+      --color-quaternary: #3f51b5
+    }
+  </style>
+  <body>
+    <div class="row">
+      <div class="column column-33 column-offset-33">
+        <h1>Activation</h1>
+        <form id="login">
+          <label for="email">
+            Email
+          </label>
+          <br>
+          <input type="email" name="email" id="email" value="demo@example.com">
+          <br>
+          <label for="password">
+            Password
+          </label>
+          <br>
+          <input type="password" name="password" id="password" value="demo">
+          <br>
+          <label for="key">
+            License Key
+          </label>
+          <br>
+          <input type="text" name="key" id="key" value="XXXX-XXXX-XXXX-XXXX">
+          <br>
+          <button style="background-color:#3f51b5" class="cbtn button" type="submit">
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+    <script>
+      const { getSession, createSession } = require("./keygen")
+      const { ipcRenderer } = require("electron")
+      // Check if there's an existing session
+      getSession().then((session) => {
+        if (session != null) {
+          setTimeout(() => ipcRenderer.send("authenticated"), 100);
+        }
+      })
+
+      // Authenticate user and create a new session
+      const login = document.getElementById("login")
+      login.addEventListener("submit", async (event) => {
+        event.preventDefault()
+        const email = document.getElementById("email")
+        const password = document.getElementById("password")
+        const key = document.getElementById("key");
+        const { token, errors } = await createSession(email.value, password.value, key.value)
+        if (errors) {
+          const [{ title, detail }] = errors
+          alert(`${title}: ${detail}`)
+          return false;
+        }
+        ipcRenderer.send("authenticated")
+      })
+    </script>
+  </body>
+</html>

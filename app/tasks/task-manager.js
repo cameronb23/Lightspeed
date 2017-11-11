@@ -62,23 +62,26 @@ function closeSocket() {
 
 function useCaptcha(c: Object) {
   // expireCaptchaCallback(c.id);
-  this.captchas.splice(this.captchas.indexOf(c));
-  return c;
+  captchas.splice(captchas.indexOf(c), 1);
+  return c.token;
 }
 
-export async function fetchCaptcha() {
+export function fetchCaptcha(cb: Function) {
   if (captchas.length > 0) {
+    console.log('sending captcha');
     const captcha = captchas[0];
-    return useCaptcha(captcha);
+    return cb(useCaptcha(captcha));
   }
 
   const i = setInterval(() => {
+    console.log(`Currently ${captchas.length} captchas in bank`);
     if (captchas.length > 0) {
       const captcha = captchas[0];
+      console.log(`Sending captcha: ${captcha.token}`);
       clearInterval(i);
-      return useCaptcha(captcha);
+      cb(useCaptcha(captcha));
     }
-  }, 250);
+  }, 500);
 }
 
 export async function startTask(
@@ -86,12 +89,15 @@ export async function startTask(
   appSettings: AppSettings,
   updateStatusCallback: Function
 ): boolean {
-  if (tasks.length < 1) {
-    startSocket();
-  }
   switch (taskData.type) {
     case 'SHOPIFY': {
-      const proxies = formatProxiesShopify(taskData.proxies.split('\n'));
+      let proxies;
+      try {
+        proxies = formatProxiesShopify(taskData.proxies.split('\n'));
+      } catch (e) {
+        console.log('Couldnt parse proxies');
+      }
+
       const task = new Shopify(
         taskData.id,
         {

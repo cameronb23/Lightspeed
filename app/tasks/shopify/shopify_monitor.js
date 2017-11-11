@@ -21,7 +21,7 @@ const JsonAvailability: Array<Object> = [];
 // it will tell me, so i can reduce errors in my code at runtime
 
 function getProxy(proxies: Array<string>) {
-  if (proxies.length === 0) return null;
+  if (proxies == null || proxies.length === 0) return null;
   return proxies[Math.floor(Math.random() * proxies.length)];
 }
 

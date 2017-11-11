@@ -10,7 +10,7 @@
  *
  * @flow
  */
-import { app, BrowserWindow, protocol } from 'electron';
+import { app, BrowserWindow, protocol, ipcMain } from 'electron';
 
 import moment from 'moment';
 import path from 'path';
@@ -18,6 +18,8 @@ import express from 'express';
 import http from 'http';
 import socket from 'socket.io';
 import bodyParser from 'body-parser';
+
+import { resetValidatedLicenses } from './keygen';
 
 import MenuBuilder from './menu';
 
@@ -77,8 +79,6 @@ app.on('window-all-closed', () => {
   }
 });
 
-protocol.registerStandardSchemes(['test']);
-
 app.on('ready', async () => {
   if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true') {
     await installExtensions();
@@ -122,7 +122,19 @@ app.on('ready', async () => {
     frame: false
   });
 
-  mainWindow.loadURL(`file://${__dirname}/app.html`);
+  // mainWindow.loadURL(`file://${__dirname}/app.html`);
+
+  mainWindow.loadURL(`file://${__dirname}/activate.html`);
+
+  ipcMain.on('unauthenticated', () => {
+    resetValidatedLicenses();
+
+    mainWindow.loadURL(`file://${__dirname}/activate.html`);
+  });
+
+  ipcMain.on('authenticated', () => {
+    mainWindow.loadURL(`file://${__dirname}/app.html`);
+  });
 
   // @TODO: Use 'ready-to-show' event
   //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event

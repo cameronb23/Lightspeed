@@ -107,16 +107,7 @@ class CaptchaComponent extends Component {
           <Grid item xs>
             <Paper className={classes.paper}>
               <Typography type="headline">Captcha solver</Typography>
-              <Button color="primary" onClick={this.resetCaptcha.bind(this)}>Manual Reset</Button>
-              {!this.state.ready && <CircularProgress />}
               <WebView className={classes.web} src={'http://localhost:9965/captcha?sitekey=6LeoeSkTAAAAAA9rkZs5oS82l69OEYjKRZAiKdaF&url=packershoes.com'} ref={(view) => { this.webView = view; }} />
-              {/* <Recaptcha
-                ref={e => { this.recapInstance = e; }}
-                verifyCallback={this.verifyToken.bind(this)}
-                render="explicit"
-                onloadCallback={this.callback.bind(this)}
-                sitekey="6LeoeSkTAAAAAA9rkZs5oS82l69OEYjKRZAiKdaF"
-              /> */}
             </Paper>
           </Grid>
         </Grid>

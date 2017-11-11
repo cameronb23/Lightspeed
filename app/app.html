@@ -19,6 +19,8 @@
   <body>
     <div id="root"></div>
     <script>
+      const { getSession, createSession } = require("./keygen");
+      const { ipcRenderer } = require('electron');
       {
         const scripts = [];
 
@@ -42,6 +44,12 @@
             .join('')
         );
       }
+
+      getSession().then((session) => {
+        if (session == null) {
+          console.log('Signed out');
+        }
+      })
     </script>
   </body>
 </html>
