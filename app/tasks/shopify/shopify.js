@@ -748,6 +748,9 @@ class ShopifyTask extends Task {
 
       if (this.session.current_url.includes('throttle')) {
         // TODO: BEING THROTTLED
+        // if(res.statusCode === 200 || res.statusCode == 503 || res.statusCode == 304) {
+            //  res.request.uri.href + '/poll?js_poll=1';
+        // }
       }
 
       this.probeContactInformation();

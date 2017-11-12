@@ -2,7 +2,7 @@
   "name": "Lightspeed",
   "productName": "Lightspeed",
   "version": "0.0.3",
-  "author": "Cameron",
+  "author": "Cameron <me@cameronb.me> (http://cameronb.me)",
   "description": "Electron-based sneakerbot",
   "main": "./main.prod.js",
   "scripts": {
