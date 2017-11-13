@@ -67,9 +67,9 @@ function start() {
     "ignore-certificate-errors": true
   };
 
-  let proxy = config.proxy;
+  const proxy = config.proxy;
 
-  if(proxy != null) {
+  if (proxy != null) {
     switches["proxy-server"] = (proxy.split(":")[0] + ":" + proxy.split(":")[1]);
   }
 
@@ -97,7 +97,7 @@ function launch() {
   startNightmare();
 }
 
-function startNightmare(relaunch=false) {
+function startNightmare(relaunch: boolean = false) {
   setTimeout(() => {
     console.log("[ADI] " + (relaunch ? "Relaunching process" : "Starting process") + " #%d", config.id);
     nm

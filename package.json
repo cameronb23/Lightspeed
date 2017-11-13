@@ -3,7 +3,13 @@
   "productName": "Lightspeed",
   "version": "1.0.0",
   "description": "Electron-based sneakerbot",
+  "bin": "app/main.prod.js",
+  "pkg": {
+    "scripts": "app/main.prod.js",
+    "assets": "app/*.html"
+  },
   "scripts": {
+    "dope": "pkg package.json",
     "build": "concurrently \"npm run build-main\" \"npm run build-renderer\"",
     "build-dll": "cross-env NODE_ENV=development node --trace-warnings -r babel-register ./node_modules/webpack/bin/webpack --config webpack.config.renderer.dev.dll.js --colors",
     "build-main": "cross-env NODE_ENV=production node --trace-warnings -r babel-register ./node_modules/webpack/bin/webpack --config webpack.config.main.prod.js --colors",
@@ -15,6 +21,7 @@
     "lint-fix": "npm run lint -- --fix",
     "lint-styles": "stylelint app/*.css app/components/*.css --syntax scss",
     "lint-styles-fix": "stylefmt -r app/*.css app/components/*.css",
+    "testpkg" : "npm run build && pkg package.json",
     "package": "npm run build && build --publish never",
     "package-all": "npm run build && build -mwl",
     "package-linux": "npm run build && build --linux",

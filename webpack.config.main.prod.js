@@ -4,8 +4,9 @@
 
 import webpack from 'webpack';
 import merge from 'webpack-merge';
-// import BabiliPlugin from 'babili-webpack-plugin';
-import UglifyJSPlugin from 'uglifyjs-webpack-plugin';
+import BabiliPlugin from 'babili-webpack-plugin';
+// import JscramblerWebpack from 'jscrambler-webpack-plugin';
+// import UglifyJSPlugin from 'uglifyjs-webpack-plugin';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import baseConfig from './webpack.config.base';
 import CheckNodeEnv from './internals/scripts/CheckNodeEnv';
@@ -14,7 +15,7 @@ CheckNodeEnv('production');
 
 export default merge.smart(baseConfig, {
   // devtool: 'source-map',
-  devtool: 'source-map',
+  devtool: 'nosources-source-map',
 
   target: 'electron-main',
 
@@ -30,14 +31,18 @@ export default merge.smart(baseConfig, {
     /**
      * Babli is an ES6+ aware minifier based on the Babel toolchain (beta)
      */
-    // new BabiliPlugin(),
+    new BabiliPlugin(),
 
     new BundleAnalyzerPlugin({
       analyzerMode: process.env.OPEN_ANALYZER === 'true' ? 'server' : 'disabled',
       openAnalyzer: process.env.OPEN_ANALYZER === 'true'
     }),
 
-    new UglifyJSPlugin(),
+    // new UglifyJSPlugin(),
+
+    // new JscramblerWebpack({
+    //   chunks: ['bundle', 'vendor']
+    // }),
 
     /**
      * Create global constants which can be configured at compile time.
