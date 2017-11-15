@@ -2,7 +2,8 @@
 import uuid from 'uuid/v4';
 import _ from 'underscore';
 import io from 'socket.io-client';
-import { Shopify } from './shopify/index';
+import { AdidasSplash } from './adidas';
+import { Shopify } from './shopify';
 import type { TaskSettings } from '../actions/tasks';
 import type { AppSettings } from '../globals';
 
@@ -107,6 +108,43 @@ export async function startTask(
           checkout_profile: taskData.checkout_profile,
           userAgent: taskData.data.userAgent,
           size: taskData.data.size
+        },
+        appSettings,
+        updateStatusCallback
+      );
+
+      try {
+        await task.start();
+      } catch (e) {
+        console.log('Error starting task');
+        return false;
+      }
+
+      tasks.push(task);
+      return true;
+    }
+    case 'ADIDAS_SPLASH': {
+      // TODO :)
+      console.log('Starting adidas splash task');
+
+      let proxies;
+      try {
+        proxies = formatProxiesShopify(taskData.proxies.split('\n'));
+      } catch (e) {
+        console.log('Couldnt parse proxies');
+      }
+
+      const task = new AdidasSplash(
+        taskData.id,
+        {
+          url: taskData.url,
+          pid: taskData.data.keywords[0],
+          size: taskData.data.size,
+          count: 1,
+          checkout_profile: taskData.checkout_profile,
+          proxies,
+          userAgent: taskData.data.userAgent,
+          refreshInterval: 15
         },
         appSettings,
         updateStatusCallback

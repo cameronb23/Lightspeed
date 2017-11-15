@@ -16,6 +16,9 @@ const taskTypeOptions = [
     key: 'shpfy', text: 'Shopify', value: 'SHOPIFY'
   },
   {
+    key: 'adcsplash', text: 'Adidas Splash', value: 'ADIDAS_SPLASH'
+  },
+  {
     key: 'preme', text: 'Supreme US', value: 'SUPREME_US'
   }
 ];

@@ -3,6 +3,8 @@ import puppeteer from 'puppeteer';
 import moment from 'moment';
 import async from 'async';
 
+import type { AdidasConfig } from './adidas-splash';
+
 // const proxy = 'http://trrrrr:mMgDnVge@ys.rapid-connect.co:33128';
 
 type TaskStatus = {
@@ -22,7 +24,7 @@ type AdidasConfig = {
   url: string,
   refreshInterval: number,
   pid: string,
-  sizes: Array<string>,
+  size: string,
   count: number,
   proxies: Array<string>
 };
@@ -36,7 +38,7 @@ type BrowserInstance = {
   step: string
 };
 
-process.on('action', async (data: ActionType) => {
+process.on('message', async (data: ActionType) => {
   switch (data.type.toLowerCase()) {
     case 'config':
       if (!data.taskData) {
