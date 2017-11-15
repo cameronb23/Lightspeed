@@ -1,6 +1,7 @@
 // @flow
 import puppeteer from 'puppeteer';
 import moment from 'moment';
+import async from 'async';
 
 // const proxy = 'http://trrrrr:mMgDnVge@ys.rapid-connect.co:33128';
 
@@ -57,12 +58,13 @@ process.on('action', async (data: ActionType) => {
 
 
 function sendStatusUpdate(status) {
-
 }
 
 function sendStatus() {
+  const x = [];
+  browsers.forEach(inst => x.push({id: inst.id, running: inst.running, status: inst.step}));
   process.send({
-    status
+    instances: x
   });
 }
 
@@ -84,11 +86,11 @@ async function start() {
       proxyIndex = 0;
     }
 
-    startBrowser(x, config.proxies[proxyIndex]);
+    initBrowser(x, config.proxies[proxyIndex]);
   }
 }
 
-function startBrowser(id: number, proxy: string) {
+function initBrowser(id: number, proxy: string) {
   setTimeout(async () => {
     const args = [];
     if (proxy) {
@@ -98,6 +100,8 @@ function startBrowser(id: number, proxy: string) {
 
     const browser = await puppeteer.launch({ ignoreHTTPSErrors: true, args });
     const page = await browser.newPage();
+
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
 
     // TODO: fix
     await page.authenticate({ username: 'postman', password: 'password' });
@@ -117,43 +121,38 @@ function startBrowser(id: number, proxy: string) {
 }
 
 async function stop() {
-
+  browsers.forEach(instance => {
+    await instance.instance.close();
+  })
 }
 
-(async () => {
-  browser = await puppeteer.launch({ headless: true, ignoreHTTPSErrors: true });
-  const page = await browser.newPage();
-
-  page.on('requestfailed', (req) => {
-    console.log(req);
-  });
-
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
-
+async function go(page) {
   try {
     await page.goto('http://www.adidas.com/us/apps/yeezy', { timeout: 60000 });
   } catch (e) {
     console.log('Error loading page: ', e);
+    return go(page);
   }
+}
 
-  await page.screenshot({ path: 'yezzyb0st' });
+async function startBrowsers() {
+  const tasks = [];
 
-  let x = 0;
+  browsers.forEach((browser: BrowserInstance) => {
+    tasks.push(async function() {
+      await go(page);
 
-  const timerId = setInterval(async () => {
-    x += 1;
-    console.log(`${moment().toString()} - Test #${x}`);
-    // const passed = await page.evaluate(() => document.querySelector('div#g-recaptcha.g-recaptcha') != null);
-    const passed = await page.$('div#g-recaptcha.g-recaptcha') != null;
+      const tid = setInterval(() => {
+        // do something
+        const passed = await page.$('div#g-recaptcha.g-recaptcha') != null;
 
-    if (passed || x === 9) {
-      clearInterval(timerId);
-      console.log('Passed splash');
-      await end();
-    }
-  }, 1000);
-})();
+        if (passed) {
+          clearInterval(tid);
+          console.log('Passed splash');
+        }
+      });
+    })
+  });
 
-async function end() {
-  await browser.close();
+  async.parallel(tasks);
 }
