@@ -247,6 +247,52 @@ function addToCart(
   });
 }
 
+async function checkQueue(config: ShopifyConfig, session: SessionConfig) {
+  const opts = {
+    url: `${config.baseUrl}/checkout/poll?js_poll=1`,
+    method: 'GET',
+    headers: {
+      Origin: config.base_url,
+      'User-Agent': config.userAgent,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.8',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    transform: function(body) {
+      return JSON.parse(body);
+    },
+    simple: false,
+    resolveWithFullResponse: true
+  };
+
+  const res = await request(opts);
+
+  if (res.statusCode === 202 || res.statusCode === 503 || res.statusCode === 304) {
+    return null; // still throttling
+  }
+
+  if (res.request.uri.href !== session.current_url) {
+    return res.request.uri.href;
+  }
+}
+
+function probeQueue(config: ShopifyConfig, session: SessionConfig): Promise<*> {
+  return new Promise(async (resolve, reject) => {
+
+    const pollInt = setInterval(async () => {
+      const res = await checkQueue(config, session);
+
+      if (res) {
+        // possibly passed
+        if(!session.current_url.includes('throttle')) {
+          clearInterval(pollInt);
+          return resolve();
+        }
+      }
+    });
+  });
+}
+
 function sendContactInfo(
   config: ShopifyConfig,
   session: SessionConfig,
@@ -647,7 +693,10 @@ class ShopifyTask extends Task {
     statusUpdateCallback: Function
   ) {
     super(id);
-    this.config = config;
+    this.config = Object.assign({}, config, {
+      baseUrl: (config.baseUrl.endsWith('/') ? config.baseUrl.substring(0, config.baseUrl.length - 1) : config.baseUrl)
+    });
+
     this.app = appSettings;
     this.statusUpdate = statusUpdateCallback;
 
@@ -747,10 +796,11 @@ class ShopifyTask extends Task {
       this.endTime(moment(), 'Added to cart.');
 
       if (this.session.current_url.includes('throttle')) {
-        // TODO: BEING THROTTLED
-        // if(res.statusCode === 200 || res.statusCode == 503 || res.statusCode == 304) {
-            //  res.request.uri.href + '/poll?js_poll=1';
-        // }
+        this.startTime(moment());
+        this.log('Waiting in queue');
+        this.statusUpdate('0-Waiting in queue');
+        this.session = await probeQueue(this.session);
+        this.endTime(moment(), 'Passed queue');
       }
 
       this.probeContactInformation();
